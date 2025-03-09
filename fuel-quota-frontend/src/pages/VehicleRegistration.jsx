@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import axios from "axios";
-import QRCode from "qrcode.react"; // ✅ Fixed Import
+import QRCode from 'react-qr-code';
 import "./vehicleRegistration.css"; // ✅ Ensure correct path & file name
 
 const schema = yup.object().shape({

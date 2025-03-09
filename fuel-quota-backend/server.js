@@ -1,7 +1,7 @@
 // server.js
 const express = require("express");
 const bodyParser = require("body-parser");
-const QRCode = require("qrcode");
+const {QRCode }= require("qrcode");
 
 const app = express();
 const port = 5000;
