@@ -5,7 +5,6 @@ const RegisterForm = () => {
   // State for form inputs
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [nationalIdNumber, setNationalIdNumber] = useState("");
   const [vehicleType, setVehicleType] = useState("");
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [engineNumber, setEngineNumber] = useState("");
@@ -25,7 +24,7 @@ const RegisterForm = () => {
     setSuccessMessage("");
 
     // Validation check for empty fields
-    if (!firstName || !lastName ||!nationalIdNumber || !vehicleType || !vehicleNumber || !engineNumber || !password || !rePassword) {
+    if (!firstName || !lastName || !vehicleType || !vehicleNumber || !engineNumber || !password || !rePassword) {
       setErrorMessage("All fields are required.");
       return;
     }
@@ -53,7 +52,6 @@ const RegisterForm = () => {
       const response = await axios.post("http://localhost:5000/api/register", {
         firstName,
         lastName,
-        nationalIdNumber,
         vehicleType,
         vehicleNumber,
         engineNumber,
@@ -85,12 +83,6 @@ const RegisterForm = () => {
           placeholder="Last Name"
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="NIC Number"
-          value={nationalIdNumber}
-          onChange={(e) => setNationalIdNumber(e.target.value)}
         />
         <input
           type="text"
