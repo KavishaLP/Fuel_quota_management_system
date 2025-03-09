@@ -17,10 +17,10 @@ app.use(bodyParser.json());
 app.post("/api/register", async (req, res) => {
   console.log(req.body);  // Log the request body to see the incoming data
 
-  const { firstName, lastName, vehicleType, vehicleNumber, engineNumber, password, confirmPassword } = req.body;
+  const { firstName, lastName, nationalInationalIdNumber, vehicleType, vehicleNumber, engineNumber, password, confirmPassword } = req.body;
 
   // Validation checks
-  if (!firstName || !lastName || !vehicleType || !vehicleNumber || !engineNumber || !password || !confirmPassword) {
+  if (!firstName || !lastName || !nationalIdNumber || !vehicleType || !vehicleNumber || !engineNumber || !password || !confirmPassword) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
@@ -32,11 +32,11 @@ app.post("/api/register", async (req, res) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const query = `INSERT INTO vehicleowner (firstName, lastName, vehicleType, vehicleNumber, engineNumber, password) 
+    const query = `INSERT INTO vehicleowner (firstName, lastName, nationalIdNumber ,vehicleType, vehicleNumber, engineNumber, password) 
     VALUES (?, ?, ?, ?, ?, ?)`;
 
 // Execute query
-db.query(query, [firstName, lastName, vehicleType, vehicleNumber, engineNumber, hashedPassword], (err, result) => {
+db.query(query, [firstName, lastName, nationalIdNumber, vehicleType, vehicleNumber, engineNumber, hashedPassword], (err, result) => {
 if (err) {
 console.error("Error inserting data:", err.stack);
 return res.status(500).json({ message: "Error registering vehicle owner" });
