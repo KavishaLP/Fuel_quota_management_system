@@ -1,14 +1,13 @@
 import express from "express";
 import bodyParser from "body-parser";
-import { QRCode } from "qrcode";
 import bcrypt from "bcryptjs";
-import db from "./config/sqldb.js"; // Import the database connection
-import cors from "cors";  // Make sure to import cors correctly
+import db from "./config/sqldb.js";  // Database connection file import
+import cors from "cors";  // CORS middleware
 
 const app = express();
 const port = 5000;
 
-// Use cors middleware after app initialization
+// Use cors middleware
 app.use(cors());
 
 // Middleware to parse JSON bodies
@@ -16,8 +15,11 @@ app.use(bodyParser.json());
 
 // Route to handle vehicle registration
 app.post("/api/register", async (req, res) => {
+  console.log(req.body);  // Log the request body to see the incoming data
+
   const { firstName, lastName, vehicleType, vehicleNumber, engineNumber, password, confirmPassword } = req.body;
 
+  // Validation checks
   if (!firstName || !lastName || !vehicleType || !vehicleNumber || !engineNumber || !password || !confirmPassword) {
     return res.status(400).json({ message: "All fields are required" });
   }
@@ -30,38 +32,25 @@ app.post("/api/register", async (req, res) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert the data into the database
-    const query = `INSERT INTO vehicles (first_name, last_name, vehicle_type, vehicle_number, engine_number, password) VALUES (?, ?, ?, ?, ?, ?)`;
+    const query = `INSERT INTO vehicleowner (firstName, lastName, vehicleType, vehicleNumber, engineNumber, password) 
+    VALUES (?, ?, ?, ?, ?, ?)`;
 
-    db.query(query, [firstName, lastName, vehicleType, vehicleNumber, engineNumber, hashedPassword], (err, result) => {
-      if (err) {
-        console.error("Error inserting data:", err.stack);
-        return res.status(500).json({ message: "Error registering vehicle owner" });
-      }
+// Execute query
+db.query(query, [firstName, lastName, vehicleType, vehicleNumber, engineNumber, hashedPassword], (err, result) => {
+if (err) {
+console.error("Error inserting data:", err.stack);
+return res.status(500).json({ message: "Error registering vehicle owner" });
+}
+return res.json({ message: "Vehicle registered successfully" });
+});
 
-      // Create QR code data (can be a simple string or more complex URL)
-      const qrData = `Vehicle: ${vehicleNumber} | Owner: ${firstName} ${lastName} | Type: ${vehicleType}`;
-
-      // Generate QR code asynchronously
-      QRCode.toDataURL(qrData, (err, qrCode) => {
-        if (err) {
-          console.error("Error generating QR code", err);
-          return res.status(500).json({ message: "Error generating QR code" });
-        }
-
-        return res.json({
-          message: "Vehicle registered successfully",
-          qrCode,
-        });
-      });
-    });
   } catch (error) {
-    console.error("Error during registration", error);
-    return res.status(500).json({ message: "An error occurred during registration" });
+    console.error("Error during registration: ", error); // Log detailed error
+    return res.status(500).json({ message: "An error occurred during registration", error: error.message });
   }
 });
 
-// Start server
+// Start the server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
