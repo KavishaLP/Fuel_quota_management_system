@@ -1,5 +1,5 @@
-import mysql from 'mysql2';
-import dotenv from 'dotenv';
+import mysql from "mysql2";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -23,14 +23,20 @@ const motorTrafficDB = mysql.createConnection({
 
 // Connect to both databases
 vehicleDB.connect((err) => {
-    if (err) throw err;
+    if (err) {
+        console.error("❌ Vehicle Registration Database Connection Failed:", err);
+        return;
+    }
     console.log("✅ Vehicle Registration Database connected!");
 });
 
 motorTrafficDB.connect((err) => {
-    if (err) throw err;
+    if (err) {
+        console.error("❌ Motor Traffic Database Connection Failed:", err);
+        return;
+    }
     console.log("✅ Motor Traffic Department Database connected!");
 });
 
-// Export both connections as default export
-export default { vehicleDB, motorTrafficDB };
+// Export both connections as named exports
+export { vehicleDB, motorTrafficDB };
