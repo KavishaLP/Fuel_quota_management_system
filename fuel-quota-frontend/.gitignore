@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# React specific
+build/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.cache/
+public/
+node_modules/*
