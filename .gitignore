@@ -31,4 +31,8 @@ build/
 .env.production.local
 .cache/
 public/
-node_modules/*
+node_modules\
+fuel_quote_frontend/node_modules/
+fuel_quote_backend/node_modules/
+fuel_quote_frontend/dist/
+fuel_quote_frontend/dist-ssr/
