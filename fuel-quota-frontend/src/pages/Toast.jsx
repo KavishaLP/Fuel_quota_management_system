@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import './Toast.css'; // Import your CSS styles for the toast
 
-const Toast = ({ message, type, onClose }) => {
+export const Toast = ({ message, type, onClose }) => {
     useEffect(() => {
         const timer = setTimeout(() => {
             onClose();
