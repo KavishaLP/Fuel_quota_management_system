@@ -3,29 +3,24 @@ import axios from "axios";
 import "./VehicleRegistration.css";
 
 const Toast = ({ message, type, onClose }) => {
-    useEffect(() => {
-        const timer = setTimeout(onClose, 5000);
-        return () => clearTimeout(timer);
-    }, [onClose]);
+  useEffect(() => {
+      const timer = setTimeout(onClose, 5000);
+      return () => clearTimeout(timer);
+  }, [onClose, message]); // Added message to dependencies
 
-    const getIcon = () => {
-        switch(type) {
-            case 'success': return '✓';
-            case 'error': return '✗';
-            case 'info': return 'ℹ';
-            default: return '';
-        }
-    };
-
-    return (
-        <div className={`toast toast-${type}`}>
-            <span className="toast-icon">{getIcon()}</span>
-            <div className="toast-message">{message}</div>
-            <button className="toast-close" onClick={onClose} aria-label="Close">
-                &times;
-            </button>
-        </div>
-    );
+  return (
+      <div className={`toast toast-${type}`}>
+          <div className="toast-message">{message}</div>
+          <button 
+              className="toast-close" 
+              onClick={onClose}
+              aria-label="Close"
+              onMouseDown={(e) => e.preventDefault()} // Prevent form submission
+          >
+              &times;
+          </button>
+      </div>
+  );
 };
 
 const RegisterForm = () => {
