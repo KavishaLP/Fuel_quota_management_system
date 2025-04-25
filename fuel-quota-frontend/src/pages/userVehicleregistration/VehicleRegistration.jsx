@@ -126,7 +126,7 @@ const RegisterForm = () => {
                 
                 // Show success message
                 addToast(response.data.message, "success");
-                
+                console.log("Registration successful:", response.data.message);
                 // Show info messages for next steps
                 response.data.nextSteps.forEach(step => {
                     addToast(step, "info");
@@ -152,7 +152,6 @@ const RegisterForm = () => {
             }
 
         } catch (error) {
-          console.error("Registration error:", error);
             console.error("Registration error:", error);
             
             if (error.response) {
