@@ -118,7 +118,7 @@ const RegisterForm = () => {
                 password: formData.password,
                 confirmPassword: formData.rePassword
             });
-
+            console.log("Registration successful:", response.data);
             if (response.data.status) {
               console.log("Registration successful:", response.data.success);
                 // Clear any existing errors
