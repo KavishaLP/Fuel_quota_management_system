@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./VehicleRegistration.css";
-import { console } from "inspector/promises";
 
 const Toast = ({ message, type, onClose }) => {
     useEffect(() => {
@@ -120,55 +119,66 @@ const RegisterForm = () => {
                 confirmPassword: formData.rePassword
             });
 
-            // Handle success
-            addToast(response.data.message, "success");
-            response.data.nextSteps.forEach(step => addToast(step, "info"));
+            if (response.data.success) {
+                // Clear any existing errors
+                setErrors({});
+                
+                // Show success message
+                addToast(response.data.message, "success");
+                
+                // Show info messages for next steps
+                response.data.nextSteps.forEach(step => {
+                    addToast(step, "info");
+                });
 
-            // Store token and reset form
-            localStorage.setItem('authToken', response.data.data.token);
-            setFormData({
-                firstName: "",
-                lastName: "",
-                NIC: "",
-                vehicleType: "",
-                vehicleNumber: "",
-                engineNumber: "",
-                password: "",
-                rePassword: ""
-            });
+                // Reset form
+                setFormData({
+                    firstName: "",
+                    lastName: "",
+                    NIC: "",
+                    vehicleType: "",
+                    vehicleNumber: "",
+                    engineNumber: "",
+                    password: "",
+                    rePassword: ""
+                });
+
+                // Store token
+                localStorage.setItem('authToken', response.data.data.token);
+            } else {
+                // Handle unexpected success:false responses
+                addToast(response.data.message || "Registration failed", "error");
+            }
 
         } catch (error) {
-            const apiError = error.response?.data;
+            console.error("Registration error:", error);
             
-            if (apiError?.errors) {
-                // Handle verification errors specifically
-                if (apiError.errorType === "VERIFICATION_FAILED") {
+            if (error.response) {
+                const apiError = error.response.data;
+                
+                if (apiError.errors) {
+                    setErrors(apiError.errors);
+                    
+                    // Show the main error message
+                    if (apiError.message) {
+                        addToast(apiError.message, "error");
+                    }
+                    
+                    // If there's a general error, show that too
                     if (apiError.errors.general) {
                         addToast(apiError.errors.general, "error");
                     }
-                    setErrors(apiError.errors);
-                } 
-                // Handle duplicate registration errors
-                else if (apiError.errorType === "DUPLICATE_REGISTRATION") {
-                    if (apiError.errors.general) {
-                        addToast(apiError.errors.general, "error");
-                    }
-                    setErrors(apiError.errors);
-                } 
-                // Handle other field-specific errors
-                else {
-                    setErrors(apiError.errors);
+                } else if (apiError.message) {
                     addToast(apiError.message, "error");
                 }
-            } else if (apiError?.message) {
-                addToast(apiError.message, "error");
+            } else if (error.request) {
+                addToast("No response from server. Please try again.", "error");
             } else {
                 addToast("Registration failed. Please try again.", "error");
             }
         } finally {
             setIsSubmitting(false);
         }
-        console.log(errors)
     };
 
     return (
@@ -211,6 +221,7 @@ const RegisterForm = () => {
                                 name={field.name}
                                 value={formData[field.name]}
                                 onChange={handleChange}
+                                required
                             >
                                 {field.options.map(option => (
                                     <option key={option} value={option}>
@@ -226,6 +237,7 @@ const RegisterForm = () => {
                                 value={formData[field.name]}
                                 onChange={handleChange}
                                 placeholder={field.placeholder || ""}
+                                required
                             />
                         )}
                         
