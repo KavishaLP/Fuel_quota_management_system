@@ -15,55 +15,85 @@ export const registerVehicle = async (req, res) => {
       password, 
       confirmPassword 
     } = req.body;
-  
+
     // Validate required fields
     const requiredFields = {
-      firstName, lastName, NIC, vehicleType, 
-      vehicleNumber, engineNumber, password, confirmPassword
+      firstName: "First name is required",
+      lastName: "Last name is required",
+      NIC: "NIC is required",
+      vehicleType: "Vehicle type is required",
+      vehicleNumber: "Vehicle number is required",
+      engineNumber: "Engine number is required",
+      password: "Password is required",
+      confirmPassword: "Please confirm your password"
     };
     
     const missingFields = Object.entries(requiredFields)
-      .filter(([_, value]) => !value)
-      .map(([key]) => key);
-  
-    if (missingFields.length > 0) {
+      .filter(([field]) => !req.body[field])
+      .reduce((acc, [field, message]) => {
+        acc[field] = message;
+        return acc;
+      }, {});
+
+    if (Object.keys(missingFields).length > 0) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required",
-        errorType: "MISSING_FIELDS",
-        missingFields
+        message: "Please fill in all required fields",
+        errorType: "VALIDATION_ERROR",
+        errors: missingFields
       });
     }
-  
+
     // Validate password match
     if (password !== confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: "Passwords do not match",
-        errorType: "PASSWORD_MISMATCH"
+        message: "Password confirmation doesn't match",
+        errorType: "VALIDATION_ERROR",
+        errors: {
+          confirmPassword: "Passwords do not match"
+        }
       });
     }
-  
+
     // Validate NIC format (Sri Lankan NIC)
     if (!/^([0-9]{9}[vVxX]|[0-9]{12})$/.test(NIC)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid NIC format. Valid formats: 123456789V or 123456789012",
-        errorType: "INVALID_NIC"
+        message: "Invalid NIC format",
+        errorType: "VALIDATION_ERROR",
+        errors: {
+          NIC: "Valid formats: 123456789V or 123456789012"
+        }
       });
     }
-  
+
     // Validate vehicle number format (Sri Lankan format)
     if (!/^[A-Z]{2,3}-\d{4}$/.test(vehicleNumber)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid vehicle number format. Expected format: ABC-1234",
-        errorType: "INVALID_VEHICLE_NUMBER"
+        message: "Invalid vehicle number",
+        errorType: "VALIDATION_ERROR",
+        errors: {
+          vehicleNumber: "Format: ABC-1234 (uppercase letters)"
+        }
       });
     }
-  
+
+    // Validate password strength
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password is too weak",
+        errorType: "VALIDATION_ERROR",
+        errors: {
+          password: "Password must be at least 8 characters"
+        }
+      });
+    }
+
     try {
-      // Step 1: Check motor traffic database for vehicle existence
+      // Check motor traffic database
       const motorTrafficCheckQuery = `
         SELECT * FROM registered_vehicles 
         WHERE vehicleNumber = ? AND engineNumber = ? AND isActive = TRUE
@@ -75,37 +105,39 @@ export const registerVehicle = async (req, res) => {
           console.error("Motor traffic DB error:", motorTrafficErr);
           return res.status(500).json({
             success: false,
-            message: "System error during vehicle verification",
+            message: "Database connection error",
             errorType: "DATABASE_ERROR"
           });
         }
-  
+
         if (motorTrafficResults.length === 0) {
           return res.status(404).json({
             success: false,
-            message: "Vehicle not found in official records or inactive",
+            message: "Vehicle not found in government database",
             errorType: "VEHICLE_NOT_FOUND",
-            details: {
-              vehicleNumber,
-              engineNumber
+            errors: {
+              vehicleNumber: "Vehicle not registered with DMV",
+              engineNumber: "Engine number not found"
             }
           });
         }
-  
+
         const officialRecord = motorTrafficResults[0];
         
         // Verify NIC matches official records
         if (officialRecord.ownerNIC !== NIC) {
           return res.status(403).json({
             success: false,
-            message: "NIC does not match official vehicle records",
+            message: "Ownership verification failed",
             errorType: "OWNER_MISMATCH",
-            officialOwner: officialRecord.ownerName,
-            officialNIC: officialRecord.ownerNIC
+            errors: {
+              NIC: "NIC doesn't match registered owner"
+            },
+            officialOwner: officialRecord.ownerName
           });
         }
-  
-        // Step 2: Check if already registered in our system
+
+        // Check if already registered in our system
         const existingCheckQuery = `
           SELECT * FROM vehicleowner 
           WHERE vehicleNumber = ? OR NIC = ?
@@ -117,31 +149,29 @@ export const registerVehicle = async (req, res) => {
             console.error("Vehicle DB error:", existingErr);
             return res.status(500).json({
               success: false,
-              message: "System error during registration check",
+              message: "Database connection error",
               errorType: "DATABASE_ERROR"
             });
           }
-  
+
           if (existingResults.length > 0) {
-            const conflicts = {
-              NIC: existingResults.some(r => r.NIC === NIC),
-              vehicleNumber: existingResults.some(r => r.vehicleNumber === vehicleNumber)
-            };
+            const errors = {};
+            const nicExists = existingResults.some(r => r.NIC === NIC);
+            const vehicleExists = existingResults.some(r => r.vehicleNumber === vehicleNumber);
             
+            if (nicExists) errors.NIC = "This NIC is already registered";
+            if (vehicleExists) errors.vehicleNumber = "This vehicle is already registered";
+
             return res.status(409).json({
               success: false,
-              message: conflicts.NIC && conflicts.vehicleNumber 
-                ? "Vehicle and owner already registered" 
-                : conflicts.NIC 
-                  ? "Owner already registered with another vehicle" 
-                  : "Vehicle already registered with another owner",
-              errorType: "ALREADY_REGISTERED",
-              conflicts
+              message: "Duplicate registration detected",
+              errorType: "DUPLICATE_REGISTRATION",
+              errors
             });
           }
-  
+
           try {
-            // Step 3: Proceed with registration
+            // Proceed with registration
             const uniqueToken = crypto.randomBytes(32).toString('hex');
             const hashedPassword = await bcrypt.hash(password, 12);
             
@@ -160,15 +190,15 @@ export const registerVehicle = async (req, res) => {
                 console.error("Registration error:", registrationErr);
                 return res.status(500).json({
                   success: false,
-                  message: "Failed to complete registration",
-                  errorType: "REGISTRATION_FAILED"
+                  message: "Registration processing error",
+                  errorType: "REGISTRATION_ERROR"
                 });
               }
-  
+
               // Success response
               return res.status(201).json({
                 success: true,
-                message: "Vehicle registration successful",
+                message: "Registration successful!",
                 data: {
                   registrationId: registrationResult.insertId,
                   owner: `${firstName} ${lastName}`,
@@ -185,8 +215,8 @@ export const registerVehicle = async (req, res) => {
                   }
                 },
                 nextSteps: [
-                  "Save your unique token securely",
-                  "Use the token to generate your QR code",
+                  "Save your registration details",
+                  "Use your token to generate QR code",
                   "Login to access your fuel quota"
                 ]
               });
@@ -195,7 +225,7 @@ export const registerVehicle = async (req, res) => {
             console.error("Processing error:", processingError);
             return res.status(500).json({
               success: false,
-              message: "Error during registration processing",
+              message: "Registration processing failed",
               errorType: "PROCESSING_ERROR"
             });
           }
@@ -206,7 +236,7 @@ export const registerVehicle = async (req, res) => {
       return res.status(500).json({
         success: false,
         message: "An unexpected error occurred",
-        errorType: "UNEXPECTED_ERROR"
+        errorType: "SERVER_ERROR"
       });
     }
-  };
+};
