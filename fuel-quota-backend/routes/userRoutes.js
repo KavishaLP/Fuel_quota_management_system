@@ -8,5 +8,6 @@ const router = express.Router();
 
 // POST /api/register
 router.post("/register", registerVehicle);
+router.post("/login", registerVehicle);
 
 export default router;
