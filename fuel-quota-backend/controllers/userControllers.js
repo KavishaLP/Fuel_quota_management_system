@@ -1,13 +1,15 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { vehicleDB, motorTrafficDB } from "../config/sqldb.js";
+import { console } from "inspector/promises";
 
 export const registerVehicle = async (req, res) => {
+    console.log("Received registration request:", req.body);
     const { 
         firstName, 
         lastName, 
         NIC, 
-        vehicleType, 
+        vehicleType,
         vehicleNumber, 
         engineNumber, 
         password, 
@@ -226,10 +228,9 @@ export const registerVehicle = async (req, res) => {
                         }
 
                         // Success response
-                        return res.status(200).json({
+                        return res.status(201).json({
                             success: true,
-                            status: "success",
-                            message: "Vehicle registered successfully",
+                            message: "Vehicle registered successfully fuck",
                             data: {
                                 registrationId: registrationResult.insertId,
                                 owner: `${firstName} ${lastName}`,

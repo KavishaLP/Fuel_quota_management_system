@@ -118,14 +118,17 @@ const RegisterForm = () => {
                 password: formData.password,
                 confirmPassword: formData.rePassword
             });
-            console.log("Registration successful:", response.data);
-            if (response.data.status) {
+            console.log("Full response:", response);
+            console.log("Response data:", response.data);
+            console.log("Response headers:", response.headers);
+            console.log("Status code:", response.status);
+            if (response.data.success) {
               console.log("Registration successful:", response.data.success);
                 // Clear any existing errors
                 setErrors({});
                 
                 // Show success message
-                addToast(response.data.message, "success");
+                addToast(response.data.message,"success");
                 
                 // Show info messages for next steps
                 response.data.nextSteps.forEach(step => {
