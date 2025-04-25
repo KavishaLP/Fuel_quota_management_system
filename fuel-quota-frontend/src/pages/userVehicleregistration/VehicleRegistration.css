@@ -1,34 +1,3 @@
-:root {
-  /* Modern color palette */
-  --primary-color: #2563eb;
-  --primary-hover: #1d4ed8;
-  --background-start: #f8fafc;
-  --background-end: #f1f5f9;
-  --surface-color: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --error-color: #ef4444;
-  --success-color: #22c55e;
-  --border-color: #e2e8f0;
-}
-
-/* Modern Reset */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Inter', system-ui, sans-serif;
-  background: linear-gradient(135deg, var(--background-start), var(--background-end));
-  min-height: 100vh;
-  margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem 1rem;
-}
 
 /* Form Container */
 .container {
