@@ -1,4 +1,4 @@
-// userControllers/userControllers.js
+// controllers/userControllers.js
 
 // controllers/userController.js
 import bcrypt from "bcryptjs";

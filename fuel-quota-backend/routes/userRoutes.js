@@ -1,0 +1,12 @@
+// routes/userRoutes.js
+
+// routes/userRoutes.js
+import express from "express";
+import { registerVehicle } from "../controllers/userController.js";
+
+const router = express.Router();
+
+// POST /api/register
+router.post("/register", registerVehicle);
+
+export default router;
