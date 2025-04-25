@@ -98,76 +98,75 @@ const RegisterForm = () => {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        if (!validateForm()) {
-            addToast("Please fix the errors in the form", "error");
-            return;
-        }
-
-        setIsSubmitting(true);
-
-        try {
-            const response = await axios.post("http://localhost:5000/api/register", {
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                NIC: formData.NIC,
-                vehicleType: formData.vehicleType,
-                vehicleNumber: formData.vehicleNumber,
-                engineNumber: formData.engineNumber,
-                password: formData.password,
-                confirmPassword: formData.rePassword
-            });
-
-            // Handle success
-            addToast(response.data.message, "success");
-            response.data.nextSteps.forEach(step => addToast(step, "info"));
-
-            // Store token and reset form
-            localStorage.setItem('authToken', response.data.data.token);
-            setFormData({
-                firstName: "",
-                lastName: "",
-                NIC: "",
-                vehicleType: "",
-                vehicleNumber: "",
-                engineNumber: "",
-                password: "",
-                rePassword: ""
-            });
-
-        } catch (error) {
-            const apiError = error.response?.data;
-            
-            if (apiError?.errors) {
-                // Handle verification errors specifically
-                if (apiError.errorType === "VERIFICATION_FAILED") {
-                    if (apiError.errors.general) {
-                        addToast(apiError.errors.general, "error");
-                    }
-                    setErrors(apiError.errors);
-                } 
-                // Handle duplicate registration errors
-                else if (apiError.errorType === "DUPLICATE_REGISTRATION") {
-                    if (apiError.errors.general) {
-                        addToast(apiError.errors.general, "error");
-                    }
-                    setErrors(apiError.errors);
-                } 
-                // Handle other field-specific errors
-                else {
-                    setErrors(apiError.errors);
-                    addToast(apiError.message, "error");
-                }
-            } else if (apiError?.message) {
-                addToast(apiError.message, "error");
-            } else {
-                addToast("Registration failed. Please try again.", "error");
-            }
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+      e.preventDefault();
+      
+      // Clear all previous toasts and errors before new submission
+      setToasts([]);
+      setErrors({});
+  
+      if (!validateForm()) {
+          addToast("Please fix the errors in the form", "error");
+          return;
+      }
+  
+      setIsSubmitting(true);
+  
+      try {
+          const response = await axios.post("http://localhost:5000/api/register", {
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              NIC: formData.NIC,
+              vehicleType: formData.vehicleType,
+              vehicleNumber: formData.vehicleNumber,
+              engineNumber: formData.engineNumber,
+              password: formData.password,
+              confirmPassword: formData.rePassword
+          });
+  
+          // Clear any remaining toasts before showing success
+          setToasts([]);
+          
+          // Handle success - add all messages at once
+          setToasts([
+              { id: Date.now(), message: response.data.message, type: 'success' },
+              ...response.data.nextSteps.map(step => ({
+                  id: Date.now() + Math.random(),
+                  message: step,
+                  type: 'info'
+              }))
+          ]);
+  
+          // Store token and reset form
+          localStorage.setItem('authToken', response.data.data.token);
+          setFormData({
+              firstName: "",
+              lastName: "",
+              NIC: "",
+              vehicleType: "",
+              vehicleNumber: "",
+              engineNumber: "",
+              password: "",
+              rePassword: ""
+          });
+  
+      } catch (error) {
+          // Clear any remaining toasts before showing errors
+          setToasts([]);
+          
+          const apiError = error.response?.data;
+          
+          if (apiError?.errors) {
+              setErrors(apiError.errors);
+              if (apiError.message) {
+                  addToast(apiError.message, "error");
+              }
+          } else {
+              addToast(error.message || "Registration failed. Please try again.", "error");
+          }
+      } finally {
+          setIsSubmitting(false);
+      }
+  };
 
     return (
         <div className="registration-container">
