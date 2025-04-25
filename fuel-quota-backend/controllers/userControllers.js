@@ -5,75 +5,86 @@ import crypto from "crypto";
 import { vehicleDB, motorTrafficDB } from "../config/sqldb.js";
 
 export const registerVehicle = async (req, res) => {
-    const { firstName, lastName, NIC, vehicleType, vehicleNumber, engineNumber, password, confirmPassword } = req.body;
+    const { 
+      firstName, 
+      lastName, 
+      NIC, 
+      vehicleType, 
+      vehicleNumber, 
+      engineNumber, 
+      password, 
+      confirmPassword 
+    } = req.body;
   
-    // Input validation
-    if (!firstName || !lastName || !NIC || !vehicleType || !vehicleNumber || !engineNumber || !password || !confirmPassword) {
-      return res.status(400).json({ 
+    // Validate required fields
+    const requiredFields = {
+      firstName, lastName, NIC, vehicleType, 
+      vehicleNumber, engineNumber, password, confirmPassword
+    };
+    
+    const missingFields = Object.entries(requiredFields)
+      .filter(([_, value]) => !value)
+      .map(([key]) => key);
+  
+    if (missingFields.length > 0) {
+      return res.status(400).json({
         success: false,
         message: "All fields are required",
         errorType: "MISSING_FIELDS",
-        fields: {
-          firstName: !firstName,
-          lastName: !lastName,
-          NIC: !NIC,
-          vehicleType: !vehicleType,
-          vehicleNumber: !vehicleNumber,
-          engineNumber: !engineNumber,
-          password: !password,
-          confirmPassword: !confirmPassword
-        }
+        missingFields
       });
     }
   
     // Validate password match
     if (password !== confirmPassword) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
         message: "Passwords do not match",
         errorType: "PASSWORD_MISMATCH"
       });
     }
   
-    // Validate NIC format (example for Sri Lankan NIC)
-    const nicRegex = /^([0-9]{9}[vVxX]|[0-9]{12})$/;
-    if (!nicRegex.test(NIC)) {
+    // Validate NIC format (Sri Lankan NIC)
+    if (!/^([0-9]{9}[vVxX]|[0-9]{12})$/.test(NIC)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid NIC format",
-        errorType: "INVALID_NIC_FORMAT"
+        message: "Invalid NIC format. Valid formats: 123456789V or 123456789012",
+        errorType: "INVALID_NIC"
       });
     }
   
-    // Validate vehicle number format (example for Sri Lankan format)
-    const vehicleNumberRegex = /^[A-Za-z]{2,3}-[0-9]{4}$/;
-    if (!vehicleNumberRegex.test(vehicleNumber)) {
+    // Validate vehicle number format (Sri Lankan format)
+    if (!/^[A-Z]{2,3}-\d{4}$/.test(vehicleNumber)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid vehicle number format (Expected format: ABC-1234)",
+        message: "Invalid vehicle number format. Expected format: ABC-1234",
         errorType: "INVALID_VEHICLE_NUMBER"
       });
     }
   
     try {
-      // Check motor traffic database
-      const checkRegisteredVehicleQuery = `SELECT * FROM registered_vehicles WHERE vehicleNumber = ? AND engineNumber = ?`;
-      motorTrafficDB.query(checkRegisteredVehicleQuery, [vehicleNumber, engineNumber], async (err, registeredVehicleResult) => {
-        if (err) {
-          console.error("Motor traffic DB error:", err);
+      // Step 1: Check motor traffic database for vehicle existence
+      const motorTrafficCheckQuery = `
+        SELECT * FROM registered_vehicles 
+        WHERE vehicleNumber = ? AND engineNumber = ? AND isActive = TRUE
+      `;
+      
+      motorTrafficDB.query(motorTrafficCheckQuery, [vehicleNumber, engineNumber], 
+      async (motorTrafficErr, motorTrafficResults) => {
+        if (motorTrafficErr) {
+          console.error("Motor traffic DB error:", motorTrafficErr);
           return res.status(500).json({
             success: false,
-            message: "System error while validating vehicle details",
-            errorType: "DATABASE_ERROR",
-            systemError: process.env.NODE_ENV === 'development' ? err.message : undefined
+            message: "System error during vehicle verification",
+            errorType: "DATABASE_ERROR"
           });
         }
   
-        if (registeredVehicleResult.length === 0) {
-          return res.status(400).json({
+        if (motorTrafficResults.length === 0) {
+          return res.status(404).json({
             success: false,
-            message: "Vehicle not found in motor traffic database. Please ensure details are correct.",
-            errorType: "VEHICLE_NOT_REGISTERED",
+            message: "Vehicle not found in official records or inactive",
+            errorType: "VEHICLE_NOT_FOUND",
             details: {
               vehicleNumber,
               engineNumber
@@ -81,97 +92,121 @@ export const registerVehicle = async (req, res) => {
           });
         }
   
-        // Check if already registered in our system
-        const checkVehicleQuery = `SELECT * FROM vehicleowner WHERE vehicleNumber = ? OR NIC = ?`;
-        vehicleDB.query(checkVehicleQuery, [vehicleNumber, NIC], async (err, result) => {
-          if (err) {
-            console.error("Vehicle DB error:", err);
+        const officialRecord = motorTrafficResults[0];
+        
+        // Verify NIC matches official records
+        if (officialRecord.ownerNIC !== NIC) {
+          return res.status(403).json({
+            success: false,
+            message: "NIC does not match official vehicle records",
+            errorType: "OWNER_MISMATCH",
+            officialOwner: officialRecord.ownerName,
+            officialNIC: officialRecord.ownerNIC
+          });
+        }
+  
+        // Step 2: Check if already registered in our system
+        const existingCheckQuery = `
+          SELECT * FROM vehicleowner 
+          WHERE vehicleNumber = ? OR NIC = ?
+        `;
+        
+        vehicleDB.query(existingCheckQuery, [vehicleNumber, NIC], 
+        async (existingErr, existingResults) => {
+          if (existingErr) {
+            console.error("Vehicle DB error:", existingErr);
             return res.status(500).json({
               success: false,
-              message: "System error while checking existing registration",
-              errorType: "DATABASE_ERROR",
-              systemError: process.env.NODE_ENV === 'development' ? err.message : undefined
+              message: "System error during registration check",
+              errorType: "DATABASE_ERROR"
             });
           }
   
-          if (result.length > 0) {
-            const existingByNIC = result.some(r => r.NIC === NIC);
-            const existingByVehicle = result.some(r => r.vehicleNumber === vehicleNumber);
+          if (existingResults.length > 0) {
+            const conflicts = {
+              NIC: existingResults.some(r => r.NIC === NIC),
+              vehicleNumber: existingResults.some(r => r.vehicleNumber === vehicleNumber)
+            };
             
             return res.status(409).json({
               success: false,
-              message: existingByNIC && existingByVehicle 
-                ? "NIC and vehicle number already registered" 
-                : existingByNIC 
-                  ? "NIC already registered" 
-                  : "Vehicle number already registered",
+              message: conflicts.NIC && conflicts.vehicleNumber 
+                ? "Vehicle and owner already registered" 
+                : conflicts.NIC 
+                  ? "Owner already registered with another vehicle" 
+                  : "Vehicle already registered with another owner",
               errorType: "ALREADY_REGISTERED",
-              conflicts: {
-                NIC: existingByNIC,
-                vehicleNumber: existingByVehicle
-              }
+              conflicts
             });
           }
   
           try {
-            // Generate token and hash password
-            const uniqueToken = crypto.randomBytes(16).toString("hex");
-            const hashedPassword = await bcrypt.hash(password, 10);
-  
-            // Insert new registration
-            const insertQuery = `
-              INSERT INTO vehicleowner 
-              (firstName, lastName, NIC, vehicleType, vehicleNumber, engineNumber, password, uniqueToken) 
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            // Step 3: Proceed with registration
+            const uniqueToken = crypto.randomBytes(32).toString('hex');
+            const hashedPassword = await bcrypt.hash(password, 12);
+            
+            const registrationQuery = `
+              INSERT INTO vehicleowner (
+                firstName, lastName, NIC, vehicleType,
+                vehicleNumber, engineNumber, password, uniqueToken
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `;
-  
-            vehicleDB.query(insertQuery, 
-              [firstName, lastName, NIC, vehicleType, vehicleNumber, engineNumber, hashedPassword, uniqueToken], 
-              (err, result) => {
-                if (err) {
-                  console.error("Registration error:", err);
-                  return res.status(500).json({
-                    success: false,
-                    message: "Failed to complete registration",
-                    errorType: "REGISTRATION_FAILED",
-                    systemError: process.env.NODE_ENV === 'development' ? err.message : undefined
-                  });
-                }
-  
-                // Success response
-                return res.status(201).json({
-                  success: true,
-                  message: "Vehicle registration completed successfully",
-                  data: {
-                    registrationId: result.insertId,
-                    vehicleNumber,
-                    NIC,
-                    token: uniqueToken
-                  },
-                  nextSteps: {
-                    message: "Please save your unique token for future reference",
-                    action: "PROCEED_TO_LOGIN"
-                  }
+            
+            vehicleDB.query(registrationQuery, [
+              firstName, lastName, NIC, vehicleType,
+              vehicleNumber, engineNumber, hashedPassword, uniqueToken
+            ], (registrationErr, registrationResult) => {
+              if (registrationErr) {
+                console.error("Registration error:", registrationErr);
+                return res.status(500).json({
+                  success: false,
+                  message: "Failed to complete registration",
+                  errorType: "REGISTRATION_FAILED"
                 });
               }
-            );
-          } catch (hashError) {
-            console.error("Password hashing error:", hashError);
+  
+              // Success response
+              return res.status(201).json({
+                success: true,
+                message: "Vehicle registration successful",
+                data: {
+                  registrationId: registrationResult.insertId,
+                  owner: `${firstName} ${lastName}`,
+                  vehicleDetails: {
+                    number: vehicleNumber,
+                    type: vehicleType,
+                    engineNumber
+                  },
+                  token: uniqueToken,
+                  officialDetails: {
+                    make: officialRecord.make,
+                    model: officialRecord.model,
+                    year: officialRecord.year
+                  }
+                },
+                nextSteps: [
+                  "Save your unique token securely",
+                  "Use the token to generate your QR code",
+                  "Login to access your fuel quota"
+                ]
+              });
+            });
+          } catch (processingError) {
+            console.error("Processing error:", processingError);
             return res.status(500).json({
               success: false,
-              message: "System error during registration",
-              errorType: "SYSTEM_ERROR"
+              message: "Error during registration processing",
+              errorType: "PROCESSING_ERROR"
             });
           }
         });
       });
     } catch (error) {
-      console.error("Unexpected registration error:", error);
+      console.error("Unexpected error:", error);
       return res.status(500).json({
         success: false,
-        message: "An unexpected error occurred during registration",
-        errorType: "UNEXPECTED_ERROR",
-        systemError: process.env.NODE_ENV === 'development' ? error.message : undefined
+        message: "An unexpected error occurred",
+        errorType: "UNEXPECTED_ERROR"
       });
     }
   };
