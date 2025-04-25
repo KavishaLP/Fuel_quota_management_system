@@ -7,9 +7,9 @@ function App() {
     <Router>
       <Routes>
         {/* Redirect the root path to /register */}
-        <Route path="/" element={<Navigate to="/register" replace />} />
-        <Route path="/register" element={<RegisterForm />} />
-        <Route path="/register" element={<RegisterForm />} />
+        <Route path="/" element={<Navigate to="/user-register" replace />} />
+        <Route path="/user-register" element={<RegisterForm />} />
+        <Route path="/user-login" element={<UserLogin />} />
       </Routes>
     </Router>
   );
