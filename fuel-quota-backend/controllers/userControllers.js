@@ -3,6 +3,7 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { vehicleDB, motorTrafficDB } from "../config/sqldb.js";
+import { console } from "inspector/promises";
 
 export const registerVehicle = async (req, res) => {
     const { 
@@ -262,6 +263,7 @@ export const registerVehicle = async (req, res) => {
             });
         });
     } catch (error) {
+        console.log("Error during registration:", error);
         console.error("Unexpected error:", error);
         return res.status(500).json({
             success: false,
