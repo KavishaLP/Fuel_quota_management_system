@@ -226,7 +226,7 @@ export const registerVehicle = async (req, res) => {
                         }
 
                         // Success response
-                        return res.json({
+                        return res.status(200).json({
                             success: true,
                             status: "success",
                             message: "Vehicle registered successfully",
