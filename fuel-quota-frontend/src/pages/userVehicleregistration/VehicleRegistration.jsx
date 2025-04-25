@@ -2,19 +2,26 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./VehicleRegistration.css";
 
-// Toast notification component
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 5000);
+    const timer = setTimeout(onClose, 5000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
+  const getIcon = () => {
+    switch(type) {
+      case 'success': return '✓';
+      case 'error': return '✗';
+      case 'info': return 'ℹ';
+      default: return '';
+    }
+  };
+
   return (
     <div className={`toast toast-${type}`}>
+      <span className="toast-icon">{getIcon()}</span>
       <div className="toast-message">{message}</div>
-      <button className="toast-close" onClick={onClose}>
+      <button className="toast-close" onClick={onClose} aria-label="Close">
         &times;
       </button>
     </div>
@@ -22,7 +29,6 @@ const Toast = ({ message, type, onClose }) => {
 };
 
 const RegisterForm = () => {
-  // Form state
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -34,87 +40,70 @@ const RegisterForm = () => {
     rePassword: ""
   });
 
-  // UI state
-  const [fieldErrors, setFieldErrors] = useState({});
+  const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toasts, setToasts] = useState([]);
 
-  // Add a new toast
   const addToast = (message, type = "info") => {
     const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
+    setToasts(prev => [...prev, { id, message, type }]);
   };
 
-  // Remove a toast
   const removeToast = (id) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    setToasts(prev => prev.filter(toast => toast.id !== id));
   };
 
-  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear field error when user types
-    if (fieldErrors[name]) {
-      setFieldErrors(prev => ({ ...prev, [name]: "" }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: null }));
     }
   };
 
-  // Field validation
-  const validateFields = () => {
+  const validateForm = () => {
     const newErrors = {};
-    let isValid = true;
+    
+    // Required fields
+    if (!formData.firstName) newErrors.firstName = "First name is required";
+    if (!formData.lastName) newErrors.lastName = "Last name is required";
+    if (!formData.NIC) newErrors.NIC = "NIC is required";
+    if (!formData.vehicleType) newErrors.vehicleType = "Vehicle type is required";
+    if (!formData.vehicleNumber) newErrors.vehicleNumber = "Vehicle number is required";
+    if (!formData.engineNumber) newErrors.engineNumber = "Engine number is required";
+    if (!formData.password) newErrors.password = "Password is required";
+    if (!formData.rePassword) newErrors.rePassword = "Please confirm password";
 
-    // Check required fields
-    Object.entries(formData).forEach(([key, value]) => {
-      if (!value) {
-        newErrors[key] = "This field is required";
-        isValid = false;
-      }
-    });
-
-    // NIC validation
+    // Format validations
     if (formData.NIC && !/^([0-9]{9}[vVxX]|[0-9]{12})$/.test(formData.NIC)) {
-      newErrors.NIC = "Use format: 123456789V or 123456789012";
-      isValid = false;
+      newErrors.NIC = "Valid formats: 123456789V or 123456789012";
     }
-
-    // Vehicle number validation
+    
     if (formData.vehicleNumber && !/^[A-Z]{2,3}-\d{4}$/.test(formData.vehicleNumber)) {
-      newErrors.vehicleNumber = "Format: ABC-1234 (uppercase letters)";
-      isValid = false;
+      newErrors.vehicleNumber = "Format: ABC-1234 (uppercase)";
     }
-
-    // Password validation
-    if (formData.password && formData.password.length < 6) {
-      newErrors.password = "Minimum 6 characters";
-      isValid = false;
+    
+    if (formData.password && formData.password.length < 8) {
+      newErrors.password = "Minimum 8 characters";
     }
-
-    // Password match validation
-    if (formData.password !== formData.rePassword) {
+    
+    if (formData.password && formData.rePassword && formData.password !== formData.rePassword) {
       newErrors.rePassword = "Passwords don't match";
-      isValid = false;
     }
 
-    setFieldErrors(newErrors);
-    
-    if (!isValid) {
-      addToast("Please correct the errors in the form", "error");
-    }
-    
-    return isValid;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFieldErrors({});
-
-    if (!validateFields()) return;
+    
+    if (!validateForm()) {
+      addToast("Please fix the errors in the form", "error");
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -127,20 +116,15 @@ const RegisterForm = () => {
         vehicleNumber: formData.vehicleNumber,
         engineNumber: formData.engineNumber,
         password: formData.password,
-        confirmPassword: formData.rePassword,
+        confirmPassword: formData.rePassword
       });
 
-      // Show success toast
-      addToast("Vehicle registered successfully!", "success");
-      
-      // Additional success details
-      addToast(`Your vehicle ${formData.vehicleNumber} is now registered`, "success");
-      addToast("Please save your token securely", "info");
+      // Handle success
+      addToast(response.data.message, "success");
+      response.data.nextSteps.forEach(step => addToast(step, "info"));
 
-      // Store token for future use
+      // Store token and reset form
       localStorage.setItem('authToken', response.data.data.token);
-
-      // Reset form on successful submission
       setFormData({
         firstName: "",
         lastName: "",
@@ -152,26 +136,15 @@ const RegisterForm = () => {
         rePassword: ""
       });
 
-    } catch (err) {
-      const apiError = err.response?.data;
+    } catch (error) {
+      const apiError = error.response?.data;
       
-      if (apiError?.errorType === "MISSING_FIELDS") {
-        setFieldErrors(apiError.fields);
-        addToast("Please fill in all required fields", "error");
-      } 
-      else if (apiError?.errorType === "VEHICLE_NOT_FOUND") {
-        addToast("Vehicle not found in official records. Please verify details.", "error");
-      }
-      else if (apiError?.errorType === "OWNER_MISMATCH") {
-        addToast("NIC doesn't match official records", "error");
-      }
-      else if (apiError?.errorType === "ALREADY_REGISTERED") {
-        addToast("This vehicle or NIC is already registered", "error");
-      }
-      else if (apiError?.message) {
+      if (apiError?.errors) {
+        setErrors(apiError.errors);
         addToast(apiError.message, "error");
-      }
-      else {
+      } else if (apiError?.message) {
+        addToast(apiError.message, "error");
+      } else {
         addToast("Registration failed. Please try again.", "error");
       }
     } finally {
@@ -179,18 +152,10 @@ const RegisterForm = () => {
     }
   };
 
-  // Render field error
-  const renderFieldError = (fieldName) => {
-    return fieldErrors[fieldName] ? (
-      <span className="field-error">{fieldErrors[fieldName]}</span>
-    ) : null;
-  };
-
   return (
     <div className="registration-container">
-      {/* Toast container */}
       <div className="toast-container">
-        {toasts.map((toast) => (
+        {toasts.map(toast => (
           <Toast
             key={toast.id}
             message={toast.message}
@@ -202,125 +167,66 @@ const RegisterForm = () => {
 
       <h2>Vehicle Registration</h2>
 
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>First Name</label>
-          <input
-            type="text"
-            name="firstName"
-            value={formData.firstName}
-            onChange={handleChange}
-            className={fieldErrors.firstName ? "error" : ""}
-          />
-          {renderFieldError("firstName")}
-        </div>
-
-        <div className="form-group">
-          <label>Last Name</label>
-          <input
-            type="text"
-            name="lastName"
-            value={formData.lastName}
-            onChange={handleChange}
-            className={fieldErrors.lastName ? "error" : ""}
-          />
-          {renderFieldError("lastName")}
-        </div>
-
-        <div className="form-group">
-          <label>NIC Number</label>
-          <input
-            type="text"
-            name="NIC"
-            value={formData.NIC}
-            onChange={handleChange}
-            placeholder="123456789V or 123456789012"
-            className={fieldErrors.NIC ? "error" : ""}
-          />
-          {renderFieldError("NIC")}
-        </div>
-
-        <div className="form-group">
-          <label>Vehicle Type</label>
-          <select
-            name="vehicleType"
-            value={formData.vehicleType}
-            onChange={handleChange}
-            className={fieldErrors.vehicleType ? "error" : ""}
-          >
-            <option value="">Select vehicle type</option>
-            <option value="Car">Car</option>
-            <option value="Motorcycle">Motorcycle</option>
-            <option value="Van">Van</option>
-            <option value="Bus">Bus</option>
-            <option value="Lorry">Lorry</option>
-            <option value="Other">Other</option>
-          </select>
-          {renderFieldError("vehicleType")}
-        </div>
-
-        <div className="form-group">
-          <label>Vehicle Number</label>
-          <input
-            type="text"
-            name="vehicleNumber"
-            value={formData.vehicleNumber}
-            onChange={handleChange}
-            placeholder="ABC-1234"
-            className={fieldErrors.vehicleNumber ? "error" : ""}
-          />
-          {renderFieldError("vehicleNumber")}
-        </div>
-
-        <div className="form-group">
-          <label>Engine Number</label>
-          <input
-            type="text"
-            name="engineNumber"
-            value={formData.engineNumber}
-            onChange={handleChange}
-            className={fieldErrors.engineNumber ? "error" : ""}
-          />
-          {renderFieldError("engineNumber")}
-        </div>
-
-        <div className="form-group">
-          <label>Password</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            className={fieldErrors.password ? "error" : ""}
-          />
-          {renderFieldError("password")}
-        </div>
-
-        <div className="form-group">
-          <label>Confirm Password</label>
-          <input
-            type="password"
-            name="rePassword"
-            value={formData.rePassword}
-            onChange={handleChange}
-            className={fieldErrors.rePassword ? "error" : ""}
-          />
-          {renderFieldError("rePassword")}
-        </div>
+      <form onSubmit={handleSubmit} noValidate>
+        {[
+          { name: "firstName", label: "First Name", type: "text" },
+          { name: "lastName", label: "Last Name", type: "text" },
+          { name: "NIC", label: "NIC Number", type: "text", placeholder: "123456789V or 123456789012" },
+          { 
+            name: "vehicleType", 
+            label: "Vehicle Type", 
+            type: "select",
+            options: ["", "Car", "Motorcycle", "Van", "Bus", "Lorry", "Other"]
+          },
+          { name: "vehicleNumber", label: "Vehicle Number", type: "text", placeholder: "ABC-1234" },
+          { name: "engineNumber", label: "Engine Number", type: "text" },
+          { name: "password", label: "Password", type: "password" },
+          { name: "rePassword", label: "Confirm Password", type: "password" }
+        ].map(field => (
+          <div key={field.name} className={`form-group ${errors[field.name] ? "has-error" : ""}`}>
+            <label htmlFor={field.name}>{field.label}</label>
+            
+            {field.type === "select" ? (
+              <select
+                id={field.name}
+                name={field.name}
+                value={formData[field.name]}
+                onChange={handleChange}
+              >
+                {field.options.map(option => (
+                  <option key={option} value={option}>
+                    {option || `Select ${field.label.toLowerCase()}`}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                id={field.name}
+                type={field.type}
+                name={field.name}
+                value={formData[field.name]}
+                onChange={handleChange}
+                placeholder={field.placeholder || ""}
+              />
+            )}
+            
+            {errors[field.name] && (
+              <span className="field-error">{errors[field.name]}</span>
+            )}
+          </div>
+        ))}
 
         <button 
           type="submit" 
           disabled={isSubmitting}
-          className={`submit-btn ${isSubmitting ? "submitting" : ""}`}
+          className="submit-btn"
         >
           {isSubmitting ? (
             <>
-              <span className="spinner"></span>
-              Registering...
+              <span className="spinner" aria-hidden="true"></span>
+              Processing...
             </>
-          ) : (
-            "Register Vehicle"
-          )}
+          ) : "Register Vehicle"}
         </button>
       </form>
     </div>
