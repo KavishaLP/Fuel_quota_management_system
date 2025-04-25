@@ -1,6 +1,5 @@
 // controllers/userControllers.js
 
-// controllers/userController.js
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { vehicleDB, motorTrafficDB } from "../config/sqldb.js";
