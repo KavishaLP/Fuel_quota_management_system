@@ -3,16 +3,19 @@
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
+import cookieParser from 'cookie-parser';
 import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
 const port = 5000;
 
+app.use(express.json());
+
 // Use CORS middleware
 app.use(cors());
 
 // Middleware to parse JSON bodies
-app.use(bodyParser.json());
+app.use(cookieParser());
 
 // Routes
 app.use("/api", userRoutes);

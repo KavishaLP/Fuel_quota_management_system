@@ -2,7 +2,7 @@
 
 // routes/userRoutes.js
 import express from "express";
-import { registerVehicle } from "../controllers/userController.js";
+import { registerVehicle } from "../controllers/userControllers.js";
 
 const router = express.Router();
 

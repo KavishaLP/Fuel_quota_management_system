@@ -230,7 +230,7 @@ export const registerVehicle = async (req, res) => {
                         // Success response
                         return res.status(201).json({
                             success: true,
-                            message: "Vehicle registered successfully fuck",
+                            message: "Vehicle registered successfully",
                             data: {
                                 registrationId: registrationResult.insertId,
                                 owner: `${firstName} ${lastName}`,
