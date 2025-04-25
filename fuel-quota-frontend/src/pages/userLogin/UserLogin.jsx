@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./UserLogin.css";
-import Toast from "./Toast"; // Reuse your existing Toast component
+import {Toast} from '../Toast' 
 
 const UserLogin = () => {
     const [loginData, setLoginData] = useState({
