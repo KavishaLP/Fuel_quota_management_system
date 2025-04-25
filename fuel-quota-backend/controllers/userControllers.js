@@ -1,268 +1,270 @@
-// controllers/userControllers.js
-
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { vehicleDB, motorTrafficDB } from "../config/sqldb.js";
-import { console } from "inspector/promises";
 
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import "./VehicleRegistration.css";
-import { console } from "inspector/promises";
+export const registerVehicle = async (req, res) => {
+    const { 
+        firstName, 
+        lastName, 
+        NIC, 
+        vehicleType, 
+        vehicleNumber, 
+        engineNumber, 
+        password, 
+        confirmPassword 
+    } = req.body;
 
-const Toast = ({ message, type, onClose }) => {
-    useEffect(() => {
-        const timer = setTimeout(onClose, 5000);
-        return () => clearTimeout(timer);
-    }, [onClose]);
-
-    const getIcon = () => {
-        switch(type) {
-            case 'success': return '✓';
-            case 'error': return '✗';
-            case 'info': return 'ℹ';
-            default: return '';
-        }
+    // Validate required fields
+    const requiredFields = {
+        firstName: "First name is required",
+        lastName: "Last name is required",
+        NIC: "NIC is required",
+        vehicleType: "Vehicle type is required",
+        vehicleNumber: "Vehicle number is required",
+        engineNumber: "Engine number is required",
+        password: "Password is required",
+        confirmPassword: "Please confirm your password"
     };
+    
+    const missingFields = Object.entries(requiredFields)
+        .filter(([field]) => !req.body[field])
+        .reduce((acc, [field, message]) => {
+            acc[field] = message;
+            return acc;
+        }, {});
 
-    return (
-        <div className={`toast toast-${type}`}>
-            <span className="toast-icon">{getIcon()}</span>
-            <div className="toast-message">{message}</div>
-            <button className="toast-close" onClick={onClose} aria-label="Close">
-                &times;
-            </button>
-        </div>
-    );
-};
+    if (Object.keys(missingFields).length > 0) {
+        return res.status(400).json({
+            success: false,
+            message: "Please fill in all required fields",
+            errorType: "VALIDATION_ERROR",
+            errors: missingFields
+        });
+    }
 
-const RegisterForm = () => {
-    const [formData, setFormData] = useState({
-        firstName: "",
-        lastName: "",
-        NIC: "",
-        vehicleType: "",
-        vehicleNumber: "",
-        engineNumber: "",
-        password: "",
-        rePassword: ""
-    });
-
-    const [errors, setErrors] = useState({});
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [toasts, setToasts] = useState([]);
-
-    const addToast = (message, type = "info") => {
-        const id = Date.now();
-        setToasts(prev => [...prev, { id, message, type }]);
-    };
-
-    const removeToast = (id) => {
-        setToasts(prev => prev.filter(toast => toast.id !== id));
-    };
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        
-        // Clear error when user types
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: null }));
-        }
-    };
-
-    const validateForm = () => {
-        const newErrors = {};
-        
-        // Required fields
-        if (!formData.firstName) newErrors.firstName = "First name is required";
-        if (!formData.lastName) newErrors.lastName = "Last name is required";
-        if (!formData.NIC) newErrors.NIC = "NIC is required";
-        if (!formData.vehicleType) newErrors.vehicleType = "Vehicle type is required";
-        if (!formData.vehicleNumber) newErrors.vehicleNumber = "Vehicle number is required";
-        if (!formData.engineNumber) newErrors.engineNumber = "Engine number is required";
-        if (!formData.password) newErrors.password = "Password is required";
-        if (!formData.rePassword) newErrors.rePassword = "Please confirm password";
-
-        // Format validations
-        if (formData.NIC && !/^([0-9]{9}[vVxX]|[0-9]{12})$/.test(formData.NIC)) {
-            newErrors.NIC = "Valid formats: 123456789V or 123456789012";
-        }
-        
-        if (formData.vehicleNumber && !/^[A-Z]{2,3}-\d{4}$/.test(formData.vehicleNumber)) {
-            newErrors.vehicleNumber = "Format: ABC-1234 (uppercase)";
-        }
-        
-        if (formData.password && formData.password.length < 8) {
-            newErrors.password = "Minimum 8 characters";
-        }
-        
-        if (formData.password && formData.rePassword && formData.password !== formData.rePassword) {
-            newErrors.rePassword = "Passwords don't match";
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        if (!validateForm()) {
-            addToast("Please fix the errors in the form", "error");
-            return;
-        }
-
-        setIsSubmitting(true);
-
-        try {
-            const response = await axios.post("http://localhost:5000/api/register", {
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                NIC: formData.NIC,
-                vehicleType: formData.vehicleType,
-                vehicleNumber: formData.vehicleNumber,
-                engineNumber: formData.engineNumber,
-                password: formData.password,
-                confirmPassword: formData.rePassword
-            });
-
-            // Handle success
-            addToast(response.data.message, "success");
-            response.data.nextSteps.forEach(step => addToast(step, "info"));
-
-            // Store token and reset form
-            localStorage.setItem('authToken', response.data.data.token);
-            setFormData({
-                firstName: "",
-                lastName: "",
-                NIC: "",
-                vehicleType: "",
-                vehicleNumber: "",
-                engineNumber: "",
-                password: "",
-                rePassword: ""
-            });
-
-        } catch (error) {
-            const apiError = error.response?.data;
-            
-            if (apiError?.errors) {
-                // Handle verification errors specifically
-                if (apiError.errorType === "VERIFICATION_FAILED") {
-                    if (apiError.errors.general) {
-                        addToast(apiError.errors.general, "error");
-                    }
-                    setErrors(apiError.errors);
-                } 
-                // Handle duplicate registration errors
-                else if (apiError.errorType === "DUPLICATE_REGISTRATION") {
-                    if (apiError.errors.general) {
-                        addToast(apiError.errors.general, "error");
-                    }
-                    setErrors(apiError.errors);
-                } 
-                // Handle other field-specific errors
-                else {
-                    setErrors(apiError.errors);
-                    addToast(apiError.message, "error");
-                }
-            } else if (apiError?.message) {
-                addToast(apiError.message, "error");
-            } else {
-                addToast("Registration failed. Please try again.", "error");
+    // Validate password match
+    if (password !== confirmPassword) {
+        return res.status(400).json({
+            success: false,
+            message: "Password confirmation doesn't match",
+            errorType: "VALIDATION_ERROR",
+            errors: {
+                confirmPassword: "Passwords do not match"
             }
-        } finally {
-            setIsSubmitting(false);
-        }
-        console.log(errors)
-    };
+        });
+    }
 
-    return (
-        <div className="registration-container">
-            <div className="toast-container">
-                {toasts.map(toast => (
-                    <Toast
-                        key={toast.id}
-                        message={toast.message}
-                        type={toast.type}
-                        onClose={() => removeToast(toast.id)}
-                    />
-                ))}
-            </div>
+    // Validate NIC format (Sri Lankan NIC)
+    if (!/^([0-9]{9}[vVxX]|[0-9]{12})$/.test(NIC)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid NIC format",
+            errorType: "VALIDATION_ERROR",
+            errors: {
+                NIC: "Valid formats: 123456789V or 123456789012"
+            }
+        });
+    }
 
-            <h2>Vehicle Registration</h2>
+    // Validate vehicle number format (Sri Lankan format)
+    if (!/^[A-Z]{2,3}-\d{4}$/.test(vehicleNumber)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid vehicle number",
+            errorType: "VALIDATION_ERROR",
+            errors: {
+                vehicleNumber: "Format: ABC-1234 (uppercase letters)"
+            }
+        });
+    }
 
-            <form onSubmit={handleSubmit} noValidate>
-                {[
-                    { name: "firstName", label: "First Name", type: "text" },
-                    { name: "lastName", label: "Last Name", type: "text" },
-                    { name: "NIC", label: "NIC Number", type: "text", placeholder: "123456789V or 123456789012" },
-                    { 
-                        name: "vehicleType", 
-                        label: "Vehicle Type", 
-                        type: "select",
-                        options: ["", "Car", "Motorcycle", "Van", "Bus", "Lorry", "Other"]
-                    },
-                    { name: "vehicleNumber", label: "Vehicle Number", type: "text", placeholder: "ABC-1234" },
-                    { name: "engineNumber", label: "Engine Number", type: "text" },
-                    { name: "password", label: "Password", type: "password" },
-                    { name: "rePassword", label: "Confirm Password", type: "password" }
-                ].map(field => (
-                    <div key={field.name} className={`form-group ${errors[field.name] ? "has-error" : ""}`}>
-                        <label htmlFor={field.name}>{field.label}</label>
-                        
-                        {field.type === "select" ? (
-                            <select
-                                id={field.name}
-                                name={field.name}
-                                value={formData[field.name]}
-                                onChange={handleChange}
-                            >
-                                {field.options.map(option => (
-                                    <option key={option} value={option}>
-                                        {option || `Select ${field.label.toLowerCase()}`}
-                                    </option>
-                                ))}
-                            </select>
-                        ) : (
-                            <input
-                                id={field.name}
-                                type={field.type}
-                                name={field.name}
-                                value={formData[field.name]}
-                                onChange={handleChange}
-                                placeholder={field.placeholder || ""}
-                            />
-                        )}
-                        
-                        {errors[field.name] && (
-                            <span className="field-error">{errors[field.name]}</span>
-                        )}
-                    </div>
-                ))}
+    // Validate password strength
+    if (password.length < 8) {
+        return res.status(400).json({
+            success: false,
+            message: "Password is too weak",
+            errorType: "VALIDATION_ERROR",
+            errors: {
+                password: "Password must be at least 8 characters"
+            }
+        });
+    }
 
-                {errors.general && (
-                    <div className="form-error-message">
-                        {errors.general}
-                    </div>
-                )}
+    try {
+        // Step 1: Verify vehicle exists in motor traffic database with matching details
+        const motorTrafficCheckQuery = `
+            SELECT * FROM registered_vehicles 
+            WHERE vehicleNumber = ? 
+            AND engineNumber = ? 
+            AND ownerNIC = ?
+            AND isActive = TRUE
+        `;
+        
+        motorTrafficDB.query(motorTrafficCheckQuery, [vehicleNumber, engineNumber, NIC], 
+        async (motorTrafficErr, motorTrafficResults) => {
+            if (motorTrafficErr) {
+                console.error("Motor traffic DB error:", motorTrafficErr);
+                return res.status(500).json({
+                    success: false,
+                    message: "Database connection error",
+                    errorType: "DATABASE_ERROR"
+                });
+            }
 
-                <button 
-                    type="submit" 
-                    disabled={isSubmitting}
-                    className="submit-btn"
-                >
-                    {isSubmitting ? (
-                        <>
-                            <span className="spinner" aria-hidden="true"></span>
-                            Processing...
-                        </>
-                    ) : "Register Vehicle"}
-                </button>
-            </form>
-        </div>
-    );
+            if (motorTrafficResults.length === 0) {
+                // Additional check to see which field doesn't match
+                const verificationErrors = {};
+                const partialCheckQuery = `
+                    SELECT * FROM registered_vehicles 
+                    WHERE vehicleNumber = ? OR engineNumber = ? OR ownerNIC = ?
+                `;
+                
+                motorTrafficDB.query(partialCheckQuery, [vehicleNumber, engineNumber, NIC], 
+                (partialErr, partialResults) => {
+                    if (partialErr) {
+                        console.error("Partial verification error:", partialErr);
+                        return res.status(404).json({
+                            success: false,
+                            message: "Vehicle details not found in government database",
+                            errorType: "VERIFICATION_FAILED"
+                        });
+                    }
+
+                    if (partialResults.length > 0) {
+                        const record = partialResults[0];
+                        if (record.vehicleNumber !== vehicleNumber) {
+                            verificationErrors.vehicleNumber = "Vehicle number doesn't match official records";
+                        }
+                        if (record.engineNumber !== engineNumber) {
+                            verificationErrors.engineNumber = "Engine number doesn't match official records";
+                        }
+                        if (record.ownerNIC !== NIC) {
+                            verificationErrors.NIC = "NIC doesn't match registered owner";
+                        }
+                    } else {
+                        verificationErrors.general = "Vehicle not found in government database";
+                    }
+
+                    return res.status(404).json({
+                        success: false,
+                        message: "Vehicle verification failed",
+                        errorType: "VERIFICATION_FAILED",
+                        errors: verificationErrors
+                    });
+                });
+                return;
+            }
+
+            // Step 2: Check if already registered in our system
+            const existingCheckQuery = `
+                SELECT * FROM vehicleowner 
+                WHERE vehicleNumber = ? 
+                OR (NIC = ? AND vehicleNumber != ?)
+            `;
+            
+            vehicleDB.query(existingCheckQuery, [vehicleNumber, NIC, vehicleNumber], 
+            async (existingErr, existingResults) => {
+                if (existingErr) {
+                    console.error("Vehicle DB error:", existingErr);
+                    return res.status(500).json({
+                        success: false,
+                        message: "Database connection error",
+                        errorType: "DATABASE_ERROR"
+                    });
+                }
+
+                if (existingResults.length > 0) {
+                    const errors = {};
+                    const nicExists = existingResults.some(r => r.NIC === NIC && r.vehicleNumber !== vehicleNumber);
+                    const vehicleExists = existingResults.some(r => r.vehicleNumber === vehicleNumber);
+                    
+                    if (nicExists) {
+                        errors.NIC = "This NIC is already registered with another vehicle";
+                    }
+                    if (vehicleExists) {
+                        errors.vehicleNumber = "This vehicle is already registered";
+                        // Check if it's registered by the same owner
+                        const sameOwner = existingResults.some(r => 
+                            r.vehicleNumber === vehicleNumber && r.NIC === NIC
+                        );
+                        if (sameOwner) {
+                            errors.general = "You have already registered this vehicle";
+                        }
+                    }
+
+                    return res.status(409).json({
+                        success: false,
+                        message: "Duplicate registration detected",
+                        errorType: "DUPLICATE_REGISTRATION",
+                        errors
+                    });
+                }
+
+                try {
+                    // Step 3: Proceed with registration
+                    const uniqueToken = crypto.randomBytes(32).toString('hex');
+                    const hashedPassword = await bcrypt.hash(password, 12);
+                    
+                    const registrationQuery = `
+                        INSERT INTO vehicleowner (
+                            firstName, lastName, NIC, vehicleType,
+                            vehicleNumber, engineNumber, password, uniqueToken
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    `;
+                    
+                    vehicleDB.query(registrationQuery, [
+                        firstName, lastName, NIC, vehicleType,
+                        vehicleNumber, engineNumber, hashedPassword, uniqueToken
+                    ], (registrationErr, registrationResult) => {
+                        if (registrationErr) {
+                            console.error("Registration error:", registrationErr);
+                            return res.status(500).json({
+                                success: false,
+                                message: "Registration processing error",
+                                errorType: "REGISTRATION_ERROR"
+                            });
+                        }
+
+                        // Success response
+                        return res.status(201).json({
+                            success: true,
+                            message: "Vehicle registered successfully",
+                            data: {
+                                registrationId: registrationResult.insertId,
+                                owner: `${firstName} ${lastName}`,
+                                vehicleDetails: {
+                                    number: vehicleNumber,
+                                    type: vehicleType,
+                                    engineNumber,
+                                    make: motorTrafficResults[0].make,
+                                    model: motorTrafficResults[0].model,
+                                    year: motorTrafficResults[0].year
+                                },
+                                token: uniqueToken
+                            },
+                            nextSteps: [
+                                "Save your registration details",
+                                "Use your token to generate QR code",
+                                "Login to access your fuel quota"
+                            ]
+                        });
+                    });
+                } catch (processingError) {
+                    console.error("Processing error:", processingError);
+                    return res.status(500).json({
+                        success: false,
+                        message: "Registration processing failed",
+                        errorType: "PROCESSING_ERROR"
+                    });
+                }
+            });
+        });
+    } catch (error) {
+        console.error("Unexpected error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "An unexpected error occurred",
+            errorType: "SERVER_ERROR"
+        });
+    }
 };
-
-export default RegisterForm;

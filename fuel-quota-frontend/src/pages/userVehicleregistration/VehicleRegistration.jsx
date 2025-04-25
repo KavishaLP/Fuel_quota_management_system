@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./VehicleRegistration.css";
+import { console } from "inspector/promises";
 
 const Toast = ({ message, type, onClose }) => {
     useEffect(() => {
@@ -106,8 +107,6 @@ const RegisterForm = () => {
         }
 
         setIsSubmitting(true);
-        setErrors({}); // Clear previous errors
-        setToasts([]); // Clear previous toasts
 
         try {
             const response = await axios.post("http://localhost:5000/api/register", {
@@ -121,7 +120,7 @@ const RegisterForm = () => {
                 confirmPassword: formData.rePassword
             });
 
-            // Handle success - only show success toasts
+            // Handle success
             addToast(response.data.message, "success");
             response.data.nextSteps.forEach(step => addToast(step, "info"));
 
@@ -142,22 +141,34 @@ const RegisterForm = () => {
             const apiError = error.response?.data;
             
             if (apiError?.errors) {
-                setErrors(apiError.errors);
-                
-                // Show general error message if exists
-                if (apiError.message) {
+                // Handle verification errors specifically
+                if (apiError.errorType === "VERIFICATION_FAILED") {
+                    if (apiError.errors.general) {
+                        addToast(apiError.errors.general, "error");
+                    }
+                    setErrors(apiError.errors);
+                } 
+                // Handle duplicate registration errors
+                else if (apiError.errorType === "DUPLICATE_REGISTRATION") {
+                    if (apiError.errors.general) {
+                        addToast(apiError.errors.general, "error");
+                    }
+                    setErrors(apiError.errors);
+                } 
+                // Handle other field-specific errors
+                else {
+                    setErrors(apiError.errors);
                     addToast(apiError.message, "error");
                 }
-                // Or show field-specific errors
-                else if (apiError.errors.general) {
-                    addToast(apiError.errors.general, "error");
-                }
+            } else if (apiError?.message) {
+                addToast(apiError.message, "error");
             } else {
-                addToast(apiError?.message || "Registration failed. Please try again.", "error");
+                addToast("Registration failed. Please try again.", "error");
             }
         } finally {
             setIsSubmitting(false);
         }
+        console.log(errors)
     };
 
     return (
