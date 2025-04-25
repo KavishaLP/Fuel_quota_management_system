@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./VehicleRegistration.css";
+import { console } from "node:inspector/promises";
 
 const Toast = ({ message, type, onClose }) => {
     useEffect(() => {
@@ -151,6 +152,7 @@ const RegisterForm = () => {
             }
 
         } catch (error) {
+          console.error("Registration error:", error);
             console.error("Registration error:", error);
             
             if (error.response) {
