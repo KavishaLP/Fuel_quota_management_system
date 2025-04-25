@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./VehicleRegistration.css";
-import { console } from "node:inspector/promises";
 
 const Toast = ({ message, type, onClose }) => {
     useEffect(() => {
@@ -126,7 +125,7 @@ const RegisterForm = () => {
                 
                 // Show success message
                 addToast(response.data.message, "success");
-                console.log("Registration successful:", response.data.message);
+                
                 // Show info messages for next steps
                 response.data.nextSteps.forEach(step => {
                     addToast(step, "info");
