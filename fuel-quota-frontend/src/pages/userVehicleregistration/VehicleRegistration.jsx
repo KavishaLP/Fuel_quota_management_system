@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./VehicleRegistration.css";
+import { console } from "inspector/promises";
 
 const Toast = ({ message, type, onClose }) => {
     useEffect(() => {
@@ -167,6 +168,7 @@ const RegisterForm = () => {
         } finally {
             setIsSubmitting(false);
         }
+        console.log(errors)
     };
 
     return (

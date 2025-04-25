@@ -231,7 +231,7 @@ export const registerVehicle = async (req, res) => {
                         // Success response
                         return res.status(201).json({
                             success: true,
-                            message: "Registration successful!",
+                            message: "success",
                             data: {
                                 registrationId: registrationResult.insertId,
                                 owner: `${firstName} ${lastName}`,
@@ -254,6 +254,7 @@ export const registerVehicle = async (req, res) => {
                     });
                 } catch (processingError) {
                     console.error("Processing error:", processingError);
+                    console.log("Error during registration processing:", processingError);
                     return res.status(500).json({
                         success: false,
                         message: "Registration processing failed",
