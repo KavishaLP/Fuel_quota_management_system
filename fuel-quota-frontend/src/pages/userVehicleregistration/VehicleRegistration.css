@@ -1,17 +1,37 @@
+/* VehicleRegistration.css */
 
-/* Form Container */
-.container {
-  width: min(100%, 32rem);
-  background: var(--surface-color);
-  padding: 2rem;
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  margin: auto;
-  position: relative;
+/* Color Variables */
+:root {
+  --primary-color: #4361ee;
+  --primary-hover: #3a56d4;
+  --surface-color: #ffffff;
+  --background-color: #f8f9fa;
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a5568;
+  --border-color: #e2e8f0;
+  --error-color: #e53e3e;
+  --success-color: #38a169;
+  --info-color: #3182ce;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --transition: all 0.2s ease;
 }
 
-/* Heading */
-h2 {
+/* Base Styles */
+.registration-container {
+  width: min(100%, 28rem);
+  background: var(--surface-color);
+  padding: 2rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  margin: 2rem auto;
+  position: relative;
+  border-top: 4px solid var(--primary-color);
+}
+
+.registration-container h2 {
   color: var(--text-primary);
   font-size: 1.5rem;
   font-weight: 600;
@@ -19,150 +39,185 @@ h2 {
   text-align: center;
 }
 
-/* Form Group */
+/* Form Groups */
 .form-group {
   margin-bottom: 1.25rem;
 }
 
-.form-label {
+.form-group label {
   display: block;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-size: 0.875rem;
   font-weight: 500;
   margin-bottom: 0.5rem;
 }
 
 /* Form Inputs */
-input, select {
+.form-group input,
+.form-group select {
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  transition: all 0.2s ease;
+  border-radius: var(--radius-sm);
+  font-size: 0.9375rem;
+  transition: var(--transition);
   background-color: var(--surface-color);
   color: var(--text-primary);
 }
 
-input:focus, select:focus {
+.form-group input:focus,
+.form-group select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
 }
 
-input::placeholder {
+.form-group input::placeholder {
   color: var(--text-secondary);
+  opacity: 0.6;
 }
 
-/* Button */
-button {
+/* Select Dropdown */
+.form-group select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%234a5568' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
+}
+
+/* Error States */
+.form-group input.error,
+.form-group select.error {
+  border-color: var(--error-color);
+  background-color: rgba(229, 62, 62, 0.05);
+}
+
+.field-error {
+  display: block;
+  color: var(--error-color);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Submit Button */
+.submit-btn {
   width: 100%;
   background-color: var(--primary-color);
   color: white;
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 1.5rem;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-sm);
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-button:hover {
+.submit-btn:hover {
   background-color: var(--primary-hover);
   transform: translateY(-1px);
 }
 
-button:active {
+.submit-btn:active {
   transform: translateY(0);
 }
 
-button:disabled {
+.submit-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+  transform: none !important;
 }
 
-/* Messages */
-.message {
-  margin-top: 1rem;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+/* Spinner */
+.spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
 }
 
-.error {
-  background-color: rgb(254, 242, 242);
-  color: var(--error-color);
-  border: 1px solid rgb(254, 226, 226);
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-.success {
-  background-color: rgb(240, 253, 244);
-  color: var(--success-color);
-  border: 1px solid rgb(220, 252, 231);
+/* Toast Notifications */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  max-width: 350px;
 }
 
-/* QR Code Container */
-.qr-container {
-  margin-top: 2rem;
-  padding: 1.5rem;
-  background-color: var(--background-start);
-  border-radius: 0.5rem;
-  text-align: center;
+.toast {
+  position: relative;
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: var(--radius-sm);
+  color: white;
+  box-shadow: var(--shadow-md);
+  animation: slideIn 0.3s ease-out;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.qr-container img {
-  max-width: 200px;
-  height: auto;
+.toast-success {
+  background-color: var(--success-color);
 }
 
-/* Responsive Design */
-@media (max-width: 640px) {
-  body {
-    padding: 1rem;
-    min-height: 100vh;
-    align-items: flex-start;
+.toast-error {
+  background-color: var(--error-color);
+}
+
+.toast-info {
+  background-color: var(--info-color);
+}
+
+.toast-message {
+  padding-right: 1.5rem;
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  padding: 0 0.25rem;
+  line-height: 1;
+}
+
+.toast-close:hover {
+  opacity: 0.8;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
   }
-
-  .container {
-    margin-top: 2rem;
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-  }
-
-  h2 {
-    font-size: 1.25rem;
-  }
-
-  input, select, button {
-    padding: 0.625rem 0.875rem;
-    font-size: 0.875rem;
+  to {
+    transform: translateX(0);
+    opacity: 1;
   }
 }
 
-/* Loading State */
-.loading {
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-/* Form Validation Styles */
-input:invalid, select:invalid {
-  border-color: var(--error-color);
-}
-
-.validation-message {
-  color: var(--error-color);
-  font-size: 0.75rem;
-  margin-top: 0.25rem;
-}
-
-/* Animation */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(5px);
   }
   to {
     opacity: 1;
@@ -170,6 +225,21 @@ input:invalid, select:invalid {
   }
 }
 
-.container {
-  animation: fadeIn 0.3s ease-out;
+/* Responsive Design */
+@media (max-width: 640px) {
+  .registration-container {
+    margin: 1rem auto;
+    padding: 1.5rem;
+    width: calc(100% - 2rem);
+  }
+
+  .registration-container h2 {
+    font-size: 1.375rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .submit-btn {
+    padding: 0.75rem;
+  }
 }
