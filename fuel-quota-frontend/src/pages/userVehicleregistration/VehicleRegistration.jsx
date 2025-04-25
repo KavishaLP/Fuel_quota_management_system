@@ -4,8 +4,13 @@ import "./VehicleRegistration.css";
 
 const Toast = ({ message, type, onClose }) => {
     useEffect(() => {
-        const timer = setTimeout(onClose, 5000);
-        return () => clearTimeout(timer);
+        const timer = setTimeout(() => {
+            onClose();
+        }, 5000);
+        
+        return () => {
+            clearTimeout(timer);
+        };
     }, [onClose]);
 
     const getIcon = () => {
@@ -21,7 +26,11 @@ const Toast = ({ message, type, onClose }) => {
         <div className={`toast toast-${type}`}>
             <span className="toast-icon">{getIcon()}</span>
             <div className="toast-message">{message}</div>
-            <button className="toast-close" onClick={onClose} aria-label="Close">
+            <button 
+                className="toast-close" 
+                onClick={onClose} 
+                aria-label="Close"
+            >
                 &times;
             </button>
         </div>
@@ -45,7 +54,7 @@ const RegisterForm = () => {
     const [toasts, setToasts] = useState([]);
 
     const addToast = (message, type = "info") => {
-        const id = Date.now();
+        const id = Date.now() + Math.random().toString(36).substr(2, 9);
         setToasts(prev => [...prev, { id, message, type }]);
     };
 
@@ -57,7 +66,6 @@ const RegisterForm = () => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
         
-        // Clear error when user types
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: null }));
         }
@@ -118,22 +126,22 @@ const RegisterForm = () => {
                 password: formData.password,
                 confirmPassword: formData.rePassword
             });
-            console.log("Full response:", response);
-            console.log("Response data:", response.data);
-            console.log("Response headers:", response.headers);
-            console.log("Status code:", response.status);
-            if (response.data.success) {
-              console.log("Registration successful:", response.data.success);
+
+            console.log("Registration response:", response.data);
+
+            if (response.data && response.data.success) {
                 // Clear any existing errors
                 setErrors({});
                 
                 // Show success message
-                addToast(response.data.message,"success");
+                addToast(response.data.message || "Vehicle registered successfully", "success");
                 
-                // Show info messages for next steps
-                response.data.nextSteps.forEach(step => {
-                    addToast(step, "info");
-                });
+                // Show info messages for next steps if they exist
+                if (response.data.nextSteps && Array.isArray(response.data.nextSteps)) {
+                    response.data.nextSteps.forEach(step => {
+                        addToast(step, "info");
+                    });
+                }
 
                 // Reset form
                 setFormData({
@@ -147,11 +155,14 @@ const RegisterForm = () => {
                     rePassword: ""
                 });
 
-                // Store token
-                localStorage.setItem('authToken', response.data.data.token);
+                // Store token if available
+                if (response.data.data?.token) {
+                    localStorage.setItem('authToken', response.data.data.token);
+                } else if (response.data.uniqueToken) {
+                    localStorage.setItem('authToken', response.data.uniqueToken);
+                }
             } else {
-                // Handle unexpected success:false responses
-                addToast(response.data.message || "Registration failed", "error");
+                addToast(response.data?.message || "Registration failed", "error");
             }
 
         } catch (error) {
@@ -160,19 +171,17 @@ const RegisterForm = () => {
             if (error.response) {
                 const apiError = error.response.data;
                 
-                if (apiError.errors) {
+                if (apiError?.errors) {
                     setErrors(apiError.errors);
                     
-                    // Show the main error message
                     if (apiError.message) {
                         addToast(apiError.message, "error");
                     }
                     
-                    // If there's a general error, show that too
-                    if (apiError.errors.general) {
+                    if (apiError.errors?.general) {
                         addToast(apiError.errors.general, "error");
                     }
-                } else if (apiError.message) {
+                } else if (apiError?.message) {
                     addToast(apiError.message, "error");
                 }
             } else if (error.request) {
