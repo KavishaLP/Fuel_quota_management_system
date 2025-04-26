@@ -11,7 +11,7 @@ function App() {
         <Route path="/" element={<Navigate to="/user-register" replace />} />
         <Route path="/user-register" element={<RegisterForm />} />
         <Route path="/user-login" element={<UserLogin />} />
-        <Route path="/user-login" element={<UserLogin />} />
+       
         <Route path="/user-dashboard" element={<Dashboard />} />
       </Routes>
     </Router>

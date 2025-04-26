@@ -169,7 +169,7 @@ const UserLogin = () => {
                 </div>
 
                 <div className="form-footer">
-                    <p>Don't have an account? <a href="/register">Register here</a></p>
+                    <p>Don't have an account? <a href="/user-register">Register here</a></p>
                     <p><a href="/forgot-password">Forgot password?</a></p>
                 </div>
             </form>
