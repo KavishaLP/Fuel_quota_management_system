@@ -273,6 +273,7 @@ export const registerVehicle = async (req, res) => {
 };
 
 export const loginUser = async (req, res) => {
+    console.log("Received login request:", req.body);
     const { NIC, password } = req.body;
 
     // Validate required fields
