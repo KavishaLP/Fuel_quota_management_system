@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import jwt from 'jsonwebtoken';
 import crypto from "crypto";
 import { vehicleDB, motorTrafficDB } from "../config/sqldb.js";
 import { console } from "inspector/promises";
