@@ -272,3 +272,135 @@ export const registerVehicle = async (req, res) => {
     }
 };
 
+export const loginUser = async (req, res) => {
+    console.log("Login request received:", req.body);
+    const { NIC, password } = req.body;
+
+    // Validate required fields
+    if (!NIC || !password) {
+        console.log("Missing fields:", { NIC, password });
+        return res.status(400).json({
+            success: false,
+            message: "NIC and password are required",
+            errorType: "VALIDATION_ERROR",
+            errors: {
+                NIC: !NIC ? "NIC is required" : null,
+                password: !password ? "Password is required" : null
+            }
+        });
+    }
+
+    // Validate NIC format
+    if (!/^([0-9]{9}[vVxX]|[0-9]{12})$/.test(NIC)) {
+        console.log("Invalid NIC format:", NIC);
+        return res.status(400).json({
+            success: false,
+            message: "Invalid NIC format",
+            errorType: "VALIDATION_ERROR",
+            errors: {
+                NIC: "Valid formats: 123456789V or 123456789012"
+            }
+        });
+    }
+
+    try {
+        console.log("Checking user in database...");
+        const userQuery = "SELECT * FROM vehicleowner WHERE NIC = ?";
+        
+        vehicleDB.query(userQuery, [NIC], async (err, results) => {
+            if (err) {
+                console.error("Database error:", err);
+                return res.status(500).json({
+                    success: false,
+                    message: "Database error during login",
+                    errorType: "DATABASE_ERROR"
+                });
+            }
+
+            console.log("Database results:", results);
+            
+            if (results.length === 0) {
+                console.log("No user found with NIC:", NIC);
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid credentials",
+                    errorType: "AUTH_ERROR",
+                    errors: {
+                        NIC: "No account found with this NIC"
+                    }
+                });
+            }
+
+            const user = results[0];
+            console.log("User found:", user.id);
+
+            // Verify password
+            console.log("Comparing passwords...");
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            
+            if (!isPasswordValid) {
+                console.log("Password comparison failed");
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid credentials",
+                    errorType: "AUTH_ERROR",
+                    errors: {
+                        password: "Incorrect password"
+                    }
+                });
+            }
+
+            console.log("Password verified, generating token...");
+            // Create JWT token
+            const token = jwt.sign(
+                {
+                    userId: user.id,
+                    NIC: user.NIC,
+                    vehicleNumber: user.vehicleNumber
+                },
+                process.env.JWT_SECRET,
+                { expiresIn: '1h' }
+            );
+
+            console.log("Token generated, fetching vehicle details...");
+            // Get vehicle details
+            const vehicleQuery = "SELECT make, model, year FROM registered_vehicles WHERE vehicleNumber = ? LIMIT 1";
+            
+            motorTrafficDB.query(vehicleQuery, [user.vehicleNumber], (vehicleErr, vehicleResults) => {
+                const vehicleDetails = vehicleResults && vehicleResults[0] ? vehicleResults[0] : {};
+                
+                console.log("Sending success response");
+                return res.status(200).json({
+                    success: true,
+                    message: "Login successful",
+                    token,
+                    user: {
+                        id: user.id,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        NIC: user.NIC,
+                        vehicleNumber: user.vehicleNumber,
+                        vehicleType: user.vehicleType,
+                        engineNumber: user.engineNumber,
+                        vehicleDetails: {
+                            make: vehicleDetails.make || 'Unknown',
+                            model: vehicleDetails.model || 'Unknown',
+                            year: vehicleDetails.year || 'Unknown'
+                        }
+                    },
+                    nextSteps: [
+                        "Use your token to authenticate requests",
+                        "Token expires in 1 hour"
+                    ]
+                });
+            });
+        });
+    } catch (error) {
+        console.error("Unexpected error in login:", error);
+        return res.status(500).json({
+            success: false,
+            message: "An unexpected error occurred during login",
+            errorType: "SERVER_ERROR"
+        });
+    }
+};
