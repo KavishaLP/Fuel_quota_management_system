@@ -271,3 +271,140 @@ export const registerVehicle = async (req, res) => {
         });
     }
 };
+
+export const loginUser = async (req, res) => {
+    const { NIC, password } = req.body;
+
+    // Validate required fields
+    if (!NIC || !password) {
+        return res.status(400).json({
+            success: false,
+            message: "NIC and password are required",
+            errorType: "VALIDATION_ERROR",
+            errors: {
+                NIC: !NIC ? "NIC is required" : null,
+                password: !password ? "Password is required" : null
+            }
+        });
+    }
+
+    // Validate NIC format (matches your registration validation)
+    if (!/^([0-9]{9}[vVxX]|[0-9]{12})$/.test(NIC)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid NIC format",
+            errorType: "VALIDATION_ERROR",
+            errors: {
+                NIC: "Valid formats: 123456789V or 123456789012"
+            }
+        });
+    }
+
+    try {
+        // Check if user exists in vehicleowner table
+        const userQuery = `
+            SELECT * FROM vehicleowner 
+            WHERE NIC = ?
+        `;
+        
+        vehicleDB.query(userQuery, [NIC], async (err, results) => {
+            if (err) {
+                console.error("Database error:", err);
+                return res.status(500).json({
+                    success: false,
+                    message: "Database error during login",
+                    errorType: "DATABASE_ERROR"
+                });
+            }
+
+            if (results.length === 0) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid credentials",
+                    errorType: "AUTH_ERROR",
+                    errors: {
+                        NIC: "No account found with this NIC"
+                    }
+                });
+            }
+
+            const user = results[0];
+
+            // Verify password
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            if (!isPasswordValid) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid credentials",
+                    errorType: "AUTH_ERROR",
+                    errors: {
+                        password: "Incorrect password"
+                    }
+                });
+            }
+
+            // Create JWT token
+            const token = jwt.sign(
+                {
+                    userId: user.id,
+                    NIC: user.NIC,
+                    vehicleNumber: user.vehicleNumber
+                },
+                process.env.JWT_SECRET,
+                { expiresIn: '1h' }
+            );
+
+            // Get vehicle details from motor traffic DB for additional info
+            const vehicleQuery = `
+                SELECT make, model, year 
+                FROM registered_vehicles
+                WHERE vehicleNumber = ?
+                LIMIT 1
+            `;
+            
+            motorTrafficDB.query(vehicleQuery, [user.vehicleNumber], (vehicleErr, vehicleResults) => {
+                if (vehicleErr) {
+                    console.error("Vehicle details error:", vehicleErr);
+                    // Continue without vehicle details if there's an error
+                    return sendSuccessResponse(user, vehicleResults[0]);
+                }
+
+                return sendSuccessResponse(user, vehicleResults[0] || {});
+            });
+
+            function sendSuccessResponse(user, vehicleDetails) {
+                // Successful login response
+                return res.status(200).json({
+                    success: true,
+                    message: "Login successful",
+                    token,
+                    user: {
+                        id: user.id,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        NIC: user.NIC,
+                        vehicleNumber: user.vehicleNumber,
+                        vehicleType: user.vehicleType,
+                        engineNumber: user.engineNumber,
+                        vehicleDetails: {
+                            make: vehicleDetails.make,
+                            model: vehicleDetails.model,
+                            year: vehicleDetails.year
+                        }
+                    },
+                    nextSteps: [
+                        "Use your token to authenticate requests",
+                        "Token expires in 1 hour"
+                    ]
+                });
+            }
+        });
+    } catch (error) {
+        console.error("Login error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "An unexpected error occurred during login",
+            errorType: "SERVER_ERROR"
+        });
+    }
+};
