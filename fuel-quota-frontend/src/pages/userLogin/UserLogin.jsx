@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./UserLogin.css";
-import {Toast} from '../Toast' 
+import { Toast } from '../Toast';
 
 const UserLogin = () => {
     const [loginData, setLoginData] = useState({
@@ -16,7 +16,7 @@ const UserLogin = () => {
     const navigate = useNavigate();
 
     const addToast = (message, type = "info") => {
-        const id = Date.now();
+        const id = Date.now() + Math.random().toString(36).substr(2, 5); // More unique ID
         setToasts(prev => [...prev, { id, message, type }]);
     };
 
@@ -26,9 +26,11 @@ const UserLogin = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setLoginData(prev => ({ ...prev, [name]: value }));
+        setLoginData(prev => ({ 
+            ...prev, 
+            [name]: value 
+        }));
         
-        // Clear error when user types
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: null }));
         }
@@ -40,7 +42,6 @@ const UserLogin = () => {
         if (!loginData.NIC) newErrors.NIC = "NIC is required";
         if (!loginData.password) newErrors.password = "Password is required";
 
-        // NIC format validation (matches your registration validation)
         if (loginData.NIC && !/^([0-9]{9}[vVxX]|[0-9]{12})$/.test(loginData.NIC)) {
             newErrors.NIC = "Valid formats: 123456789V or 123456789012";
         }
@@ -50,8 +51,10 @@ const UserLogin = () => {
     };
 
     const handleSubmit = async (e) => {
-        console.log("Login data:", loginData);
         e.preventDefault();
+        
+        // Debug: Show form data before validation
+        console.log("Form submission - loginData:", JSON.parse(JSON.stringify(loginData)));
         
         if (!validateForm()) {
             addToast("Please fix the errors in the form", "error");
@@ -61,46 +64,39 @@ const UserLogin = () => {
         setIsSubmitting(true);
 
         try {
+            // Debug: Show data being sent to API
+            console.log("Sending to API:", { 
+                NIC: loginData.NIC, 
+                password: "***" // Don't log actual password
+            });
+
             const response = await axios.post("http://localhost:5000/api/login", {
                 NIC: loginData.NIC,
                 password: loginData.password
             });
 
+            console.log("API Response:", response.data);
+
             if (response.data.success) {
-                // Clear any existing errors
                 setErrors({});
-                
-                // Store the token and user data
                 localStorage.setItem('authToken', response.data.token);
                 localStorage.setItem('userData', JSON.stringify(response.data.user));
-                
-                // Show success message
                 addToast("Login successful! Redirecting...", "success");
-                
-                // Redirect after a short delay
-                setTimeout(() => {
-                    navigate("/user-dashboard"); // Or your desired route
-                }, 1500);
+                setTimeout(() => navigate("/user-dashboard"), 1500);
             } else {
                 addToast(response.data.message || "Login failed", "error");
             }
-
         } catch (error) {
             console.error("Login error:", error);
             
             if (error.response) {
+                console.error("Error response data:", error.response.data);
                 const apiError = error.response.data;
                 
                 if (apiError.errors) {
                     setErrors(apiError.errors);
-                    
-                    if (apiError.message) {
-                        addToast(apiError.message, "error");
-                    }
-                    
-                    if (apiError.errors.general) {
-                        addToast(apiError.errors.general, "error");
-                    }
+                    if (apiError.message) addToast(apiError.message, "error");
+                    if (apiError.errors.general) addToast(apiError.errors.general, "error");
                 } else if (apiError.message) {
                     addToast(apiError.message, "error");
                 }
@@ -141,9 +137,7 @@ const UserLogin = () => {
                         placeholder="123456789V or 123456789012"
                         required
                     />
-                    {errors.NIC && (
-                        <span className="field-error">{errors.NIC}</span>
-                    )}
+                    {errors.NIC && <span className="field-error">{errors.NIC}</span>}
                 </div>
 
                 <div className={`form-group ${errors.password ? "has-error" : ""}`}>
@@ -156,9 +150,7 @@ const UserLogin = () => {
                         onChange={handleChange}
                         required
                     />
-                    {errors.password && (
-                        <span className="field-error">{errors.password}</span>
-                    )}
+                    {errors.password && <span className="field-error">{errors.password}</span>}
                 </div>
 
                 <div className="form-actions">
