@@ -78,7 +78,7 @@ const UserLogin = () => {
                 
                 // Redirect after a short delay
                 setTimeout(() => {
-                    navigate("/dashboard"); // Or your desired route
+                    navigate("/user-dashboard"); // Or your desired route
                 }, 1500);
             } else {
                 addToast(response.data.message || "Login failed", "error");
