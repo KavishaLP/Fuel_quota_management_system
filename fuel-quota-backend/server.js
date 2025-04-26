@@ -12,7 +12,9 @@ const port = 5000;
 app.use(express.json());
 
 // Use CORS middleware
-app.use(cors());
+app.use(cors({
+  credentials: true
+}));
 
 // Middleware to parse JSON bodies
 app.use(cookieParser());
