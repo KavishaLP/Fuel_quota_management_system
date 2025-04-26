@@ -50,6 +50,7 @@ const UserLogin = () => {
     };
 
     const handleSubmit = async (e) => {
+        console.log("Login data:", loginData);
         e.preventDefault();
         
         if (!validateForm()) {
