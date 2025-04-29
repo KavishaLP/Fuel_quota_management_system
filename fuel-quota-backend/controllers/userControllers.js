@@ -71,12 +71,13 @@ export const registerVehicle = async (req, res) => {
 
     // Validate vehicle number format (Sri Lankan format)
     if (!/^[A-Z]{2,3}-\d{4}$/.test(vehicleNumber)) {
+        console.log("Invalid Vehicle Number format:", vehicleNumber);
         return res.status(400).json({
             success: false,
-            message: "Invalid vehicle number",
+            message: "Invalid Vehicle Number format",
             errorType: "VALIDATION_ERROR",
             errors: {
-                vehicleNumber: "Format: ABC-1234 (uppercase letters)"
+                vehicleNumber: "Format: ABC-1234 (uppercase)"
             }
         });
     }
@@ -299,7 +300,6 @@ export const loginUser = async (req, res) => {
     try {
         console.log("Checking vehicle in database...");
         const userQuery = "SELECT * FROM vehicleowner WHERE vehicleNumber = ?";
-        
         vehicleDB.query(userQuery, [vehicleNumber], async (err, results) => {
             if (err) {
                 console.error("Database error:", err);
@@ -330,7 +330,6 @@ export const loginUser = async (req, res) => {
             // Verify password
             console.log("Comparing passwords...");
             const isPasswordValid = await bcrypt.compare(password, user.password);
-            
             if (!isPasswordValid) {
                 console.log("Password comparison failed");
                 return res.status(401).json({
@@ -346,13 +345,13 @@ export const loginUser = async (req, res) => {
             console.log("Password verified, generating token...");
             // Create JWT token
             const token = jwt.sign(
-                {
-                    userId: user.id,
-                    NIC: user.NIC,
-                    vehicleNumber: user.vehicleNumber
-                },
-                process.env.JWT_SECRET,
-                { expiresIn: '1h' }
+              {
+                userId: user.id,
+                NIC: user.NIC,
+                vehicleNumber: user.vehicleNumber
+              },
+              process.env.JWT_SECRET,
+              { expiresIn: '1h' }
             );
 
             console.log("Token generated, fetching vehicle details...");
