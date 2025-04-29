@@ -206,6 +206,19 @@ export const registerVehicle = async (req, res) => {
                     // Step 3: Proceed with registration
                     const uniqueToken = crypto.randomBytes(32).toString('hex');
                     const hashedPassword = await bcrypt.hash(password, 12);
+
+                    // Make sure the vehicleType is parsed as an integer  
+                    const vehicleTypeId = parseInt(vehicleType, 10);
+                    if (isNaN(vehicleTypeId)) {
+                        return res.status(400).json({
+                            success: false,
+                            message: "Invalid vehicle type",
+                            errorType: "VALIDATION_ERROR",
+                            errors: {
+                                vehicleType: "Please select a valid vehicle type"
+                            }
+                        });
+                    }
                     
                     const registrationQuery = `
                         INSERT INTO vehicleowner (
@@ -215,7 +228,7 @@ export const registerVehicle = async (req, res) => {
                     `;
                     
                     vehicleDB.query(registrationQuery, [
-                        firstName, lastName, NIC, vehicleType,
+                        firstName, lastName, NIC, vehicleTypeId,
                         vehicleNumber, engineNumber, hashedPassword, uniqueToken
                     ], (registrationErr, registrationResult) => {
                         if (registrationErr) {
