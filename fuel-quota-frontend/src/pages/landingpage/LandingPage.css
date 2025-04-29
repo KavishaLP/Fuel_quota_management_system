@@ -130,12 +130,16 @@
   justify-content: space-between;
   padding: 8rem 5% 5rem;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: 90vh;
+  min-height: 100vh; /* Changed from 90vh to 100vh for full screen height */
+  width: 100%; /* Ensure full width */
+  box-sizing: border-box; /* Include padding in width calculation */
+  margin: 0; /* Remove any margin */
 }
 
 .hero-content {
   flex: 1;
   max-width: 600px;
+  padding-right: 2rem; /* Add some spacing between content and image */
 }
 
 .hero-content h1 {
@@ -157,6 +161,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  max-width: 50%;
 }
 
 .hero-image img {
@@ -522,6 +527,11 @@
   .hero-content {
     margin-bottom: 3rem;
     max-width: 100%;
+    padding-right: 0;
+  }
+  
+  .hero-image {
+    max-width: 80%;
   }
   
   .hero-cta {
@@ -552,8 +562,12 @@
     font-size: 0.9rem;
   }
   
+  .hero-section {
+    padding: 7rem 1rem 3rem;
+  }
+  
   .hero-content h1 {
-    font-size: 2rem;
+    font-size: 2.2rem;
   }
   
   .features-section h2,
