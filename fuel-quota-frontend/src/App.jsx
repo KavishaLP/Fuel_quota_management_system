@@ -1,4 +1,5 @@
 //npm install @fortawesome/react-fontawesome @fortawesome/free-solid-svg-icons
+//npm install @fortawesome/react-fontawesome @fortawesome/free-solid-svg-icons
 
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";

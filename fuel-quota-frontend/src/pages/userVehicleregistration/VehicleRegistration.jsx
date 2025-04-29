@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
 import "./VehicleRegistration.css";
-import {Toast} from '../Toast' 
-
+import { Toast } from '../Toast';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser, faIdCard, faCar, faKey, faCarSide, faFingerprint } from '@fortawesome/free-solid-svg-icons';
 
 const RegisterForm = () => {
     const [formData, setFormData] = useState({
@@ -161,6 +162,24 @@ const RegisterForm = () => {
         }
     };
 
+    // Form field configuration
+    const formFields = [
+        { name: "firstName", label: "First Name", type: "text", icon: faUser },
+        { name: "lastName", label: "Last Name", type: "text", icon: faUser },
+        { name: "NIC", label: "NIC Number", type: "text", placeholder: "123456789V or 123456789012", icon: faIdCard },
+        { 
+            name: "vehicleType", 
+            label: "Vehicle Type", 
+            type: "select",
+            options: ["", "Car", "Motorcycle", "Van", "Bus", "Lorry", "Other"],
+            icon: faCar
+        },
+        { name: "vehicleNumber", label: "Vehicle Number", type: "text", placeholder: "ABC-1234", icon: faCarSide },
+        { name: "engineNumber", label: "Engine Number", type: "text", icon: faFingerprint },
+        { name: "password", label: "Password", type: "password", icon: faKey },
+        { name: "rePassword", label: "Confirm Password", type: "password", icon: faKey }
+    ];
+
     return (
         <div className="registration-container">
             <div className="toast-container">
@@ -177,23 +196,12 @@ const RegisterForm = () => {
             <h2>Vehicle Registration</h2>
 
             <form onSubmit={handleSubmit} noValidate>
-                {[
-                    { name: "firstName", label: "First Name", type: "text" },
-                    { name: "lastName", label: "Last Name", type: "text" },
-                    { name: "NIC", label: "NIC Number", type: "text", placeholder: "123456789V or 123456789012" },
-                    { 
-                        name: "vehicleType", 
-                        label: "Vehicle Type", 
-                        type: "select",
-                        options: ["", "Car", "Motorcycle", "Van", "Bus", "Lorry", "Other"]
-                    },
-                    { name: "vehicleNumber", label: "Vehicle Number", type: "text", placeholder: "ABC-1234" },
-                    { name: "engineNumber", label: "Engine Number", type: "text" },
-                    { name: "password", label: "Password", type: "password" },
-                    { name: "rePassword", label: "Confirm Password", type: "password" }
-                ].map(field => (
+                {formFields.map(field => (
                     <div key={field.name} className={`form-group ${errors[field.name] ? "has-error" : ""}`}>
-                        <label htmlFor={field.name}>{field.label}</label>
+                        <label htmlFor={field.name}>
+                            {field.icon && <FontAwesomeIcon icon={field.icon} style={{ marginRight: '8px' }} />}
+                            {field.label}
+                        </label>
                         
                         {field.type === "select" ? (
                             <select
