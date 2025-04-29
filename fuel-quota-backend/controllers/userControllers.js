@@ -284,7 +284,65 @@ export const loginUser = async (req, res) => {
         });
     }
 
-    // Rest of the function remains unchanged
-    // ...
+    try {
+        // Check if user with the provided vehicle number exists
+        const query = "SELECT * FROM vehicleowner WHERE vehicleNumber = ?";
+        vehicleDB.query(query, [vehicleNumber], async (err, results) => {
+            if (err) {
+                console.error("Database error during login:", err);
+                return res.status(500).json({
+                    success: false,
+                    message: "Internal server error",
+                    errorType: "DATABASE_ERROR"
+                });
+            }
+
+            if (results.length === 0) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid vehicle number or password",
+                    errorType: "AUTHENTICATION_ERROR"
+                });
+            }
+
+            const user = results[0];
+            
+            // Compare passwords
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            
+            if (!isPasswordValid) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid vehicle number or password",
+                    errorType: "AUTHENTICATION_ERROR"
+                });
+            }
+
+            // Generate JWT token
+            const token = jwt.sign(
+                { userId: user.id, vehicleNumber: user.vehicleNumber },
+                process.env.JWT_SECRET || 'fallback_secret_key_not_for_production',
+                { expiresIn: '24h' }
+            );
+
+            // Return user data (excluding password)
+            const userData = { ...user };
+            delete userData.password;
+
+            return res.status(200).json({
+                success: true,
+                message: "Login successful",
+                token,
+                user: userData
+            });
+        });
+    } catch (error) {
+        console.error("Login error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "An unexpected error occurred",
+            errorType: "SERVER_ERROR"
+        });
+    }
 };
 
