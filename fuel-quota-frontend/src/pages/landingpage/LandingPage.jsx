@@ -17,11 +17,11 @@ const LandingPage = () => {
   const navigate = useNavigate();
 
   const handleRegisterClick = () => {
-    navigate('/register');
+    navigate('/user-register');
   };
 
   const handleLoginClick = () => {
-    navigate('/login');
+    navigate('/user-login');
   };
 
   return (
