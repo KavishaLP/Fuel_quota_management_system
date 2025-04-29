@@ -1,0 +1,36 @@
+----------------motortrafficdepdb DATABASE------------------
+CREATE TABLE registered_vehicles (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    vehicleNumber VARCHAR(20) NOT NULL UNIQUE,
+    engineNumber VARCHAR(50) NOT NULL UNIQUE,
+    make VARCHAR(50) NOT NULL,
+    model VARCHAR(50) NOT NULL,
+    year INT(11) NOT NULL,
+    ownerName VARCHAR(100) NOT NULL,
+    ownerNIC VARCHAR(20) NOT NULL,
+    registrationDate DATE NOT NULL,
+    lastRenewalDate DATE DEFAULT NULL,
+    isActive TINYINT(1) DEFAULT 1,
+    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);
+
+----------------vehicleregisterdb DATABASE------------------
+CREATE TABLE vehicleowner (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    firstName VARCHAR(50) NOT NULL,
+    lastName VARCHAR(50) NOT NULL,
+    NIC VARCHAR(20) NOT NULL UNIQUE,
+    vehicleType VARCHAR(50) NOT NULL,
+    vehicleNumber VARCHAR(20) NOT NULL UNIQUE,
+    engineNumber VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    uniqueToken VARCHAR(255) NOT NULL,
+    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);
+
+
+
