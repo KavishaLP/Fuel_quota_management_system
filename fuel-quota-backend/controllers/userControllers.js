@@ -275,7 +275,7 @@ export const loginUser = async (req, res) => {
         console.log("Missing fields:", { vehicleNumber, password });
         return res.status(400).json({
             success: false,
-            message: "Vehicle Number and password are required", // This is already correct
+            message: "Vehicle Number and password are required",
             errorType: "VALIDATION_ERROR",
             errors: {
                 vehicleNumber: !vehicleNumber ? "Vehicle Number is required" : null,
