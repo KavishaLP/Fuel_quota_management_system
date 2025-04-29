@@ -3,7 +3,7 @@ import axios from "axios";
 import "./VehicleRegistration.css";
 import { Toast } from '../Toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faIdCard, faCar, faKey, faCarSide, faFingerprint } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faIdCard, faCar, faKey, faCarSide, faFingerprint, faSignInAlt } from '@fortawesome/free-solid-svg-icons';
 
 const RegisterForm = () => {
     const [formData, setFormData] = useState({
@@ -195,11 +195,11 @@ const RegisterForm = () => {
 
             <h2>Vehicle Registration</h2>
 
-            <form onSubmit={handleSubmit} noValidate>
+            <form onSubmit={handleSubmit} className="registration-form" noValidate>
                 {formFields.map(field => (
                     <div key={field.name} className={`form-group ${errors[field.name] ? "has-error" : ""}`}>
                         <label htmlFor={field.name}>
-                            {field.icon && <FontAwesomeIcon icon={field.icon} style={{ marginRight: '8px' }} />}
+                            <FontAwesomeIcon icon={field.icon} />
                             {field.label}
                         </label>
                         
@@ -251,8 +251,22 @@ const RegisterForm = () => {
                             <span className="spinner" aria-hidden="true"></span>
                             Processing...
                         </>
-                    ) : "Register Vehicle"}
+                    ) : (
+                        <>
+                            <FontAwesomeIcon icon={faCar} />
+                            Register Vehicle
+                        </>
+                    )}
                 </button>
+
+                <div className="form-footer">
+                    <p>
+                        Already have an account? 
+                        <a href="/user-login">
+                            <FontAwesomeIcon icon={faSignInAlt} /> Login here
+                        </a>
+                    </p>
+                </div>
             </form>
         </div>
     );
