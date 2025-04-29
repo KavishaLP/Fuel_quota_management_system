@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -126,11 +128,12 @@ const UserLogin = () => {
             </div>
 
             <h2>Vehicle Owner Login</h2>
-
-            <form onSubmit={handleSubmit} noValidate>
+            
+            <form onSubmit={handleSubmit} className="login-form" noValidate>
+                {/* NIC Number Field */}
                 <div className={`form-group ${errors.NIC ? "has-error" : ""}`}>
                     <label htmlFor="NIC">
-                        <FontAwesomeIcon icon={faIdCard} style={{ marginRight: '8px' }} />
+                        <FontAwesomeIcon icon={faIdCard} />
                         NIC Number
                     </label>
                     <input
@@ -139,15 +142,16 @@ const UserLogin = () => {
                         name="NIC"
                         value={loginData.NIC}
                         onChange={handleChange}
-                        placeholder="123456789V or 123456789012"
+                        placeholder="Enter your NIC number"
                         required
                     />
                     {errors.NIC && <span className="field-error">{errors.NIC}</span>}
                 </div>
 
+                {/* Password Field */}
                 <div className={`form-group ${errors.password ? "has-error" : ""}`}>
                     <label htmlFor="password">
-                        <FontAwesomeIcon icon={faKey} style={{ marginRight: '8px' }} />
+                        <FontAwesomeIcon icon={faKey} />
                         Password
                     </label>
                     <input
@@ -156,38 +160,38 @@ const UserLogin = () => {
                         name="password"
                         value={loginData.password}
                         onChange={handleChange}
+                        placeholder="Enter your password"
                         required
                     />
                     {errors.password && <span className="field-error">{errors.password}</span>}
                 </div>
 
-                <div className="form-actions">
-                    <button 
-                        type="submit" 
-                        disabled={isSubmitting}
-                        className="submit-btn"
-                    >
-                        {isSubmitting ? (
-                            <>
-                                <span className="spinner" aria-hidden="true"></span>
-                                Logging in...
-                            </>
-                        ) : (
-                            <>
-                                <FontAwesomeIcon icon={faSignInAlt} />
-                                Login
-                            </>
-                        )}
-                    </button>
-                </div>
+                {/* Login Button */}
+                <button 
+                    type="submit" 
+                    className={`submit-btn ${isSubmitting ? 'loading' : ''}`}
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? (
+                        <>
+                            <span className="spinner"></span>
+                            Logging in...
+                        </>
+                    ) : (
+                        <>
+                            <FontAwesomeIcon icon={faSignInAlt} />
+                            Login
+                        </>
+                    )}
+                </button>
 
+                {/* Footer Links */}
                 <div className="form-footer">
                     <p>
-                        <FontAwesomeIcon icon={faUserPlus} style={{ marginRight: '6px' }} />
-                        Don't have an account? <a href="/user-register">Register here</a>
+                        Don't have an account? 
+                        <a href="/user-register"> Register here</a>
                     </p>
                     <p>
-                        <FontAwesomeIcon icon={faQuestionCircle} style={{ marginRight: '6px' }} />
                         <a href="/forgot-password">Forgot password?</a>
                     </p>
                 </div>
