@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./UserLogin.css";
 import { Toast } from '../Toast';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faIdCard, faKey, faSignInAlt, faUserPlus, faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 
 const UserLogin = () => {
     const [loginData, setLoginData] = useState({
@@ -16,7 +18,7 @@ const UserLogin = () => {
     const navigate = useNavigate();
 
     const addToast = (message, type = "info") => {
-        const id = Date.now() + Math.random().toString(36).substr(2, 5); // More unique ID
+        const id = Date.now() + Math.random().toString(36).substr(2, 5); 
         setToasts(prev => [...prev, { id, message, type }]);
     };
 
@@ -127,7 +129,10 @@ const UserLogin = () => {
 
             <form onSubmit={handleSubmit} noValidate>
                 <div className={`form-group ${errors.NIC ? "has-error" : ""}`}>
-                    <label htmlFor="NIC">NIC Number</label>
+                    <label htmlFor="NIC">
+                        <FontAwesomeIcon icon={faIdCard} style={{ marginRight: '8px' }} />
+                        NIC Number
+                    </label>
                     <input
                         type="text"
                         id="NIC"
@@ -141,7 +146,10 @@ const UserLogin = () => {
                 </div>
 
                 <div className={`form-group ${errors.password ? "has-error" : ""}`}>
-                    <label htmlFor="password">Password</label>
+                    <label htmlFor="password">
+                        <FontAwesomeIcon icon={faKey} style={{ marginRight: '8px' }} />
+                        Password
+                    </label>
                     <input
                         type="password"
                         id="password"
@@ -164,13 +172,24 @@ const UserLogin = () => {
                                 <span className="spinner" aria-hidden="true"></span>
                                 Logging in...
                             </>
-                        ) : "Login"}
+                        ) : (
+                            <>
+                                <FontAwesomeIcon icon={faSignInAlt} />
+                                Login
+                            </>
+                        )}
                     </button>
                 </div>
 
                 <div className="form-footer">
-                    <p>Don't have an account? <a href="/user-register">Register here</a></p>
-                    <p><a href="/forgot-password">Forgot password?</a></p>
+                    <p>
+                        <FontAwesomeIcon icon={faUserPlus} style={{ marginRight: '6px' }} />
+                        Don't have an account? <a href="/user-register">Register here</a>
+                    </p>
+                    <p>
+                        <FontAwesomeIcon icon={faQuestionCircle} style={{ marginRight: '6px' }} />
+                        <a href="/forgot-password">Forgot password?</a>
+                    </p>
                 </div>
             </form>
         </div>
