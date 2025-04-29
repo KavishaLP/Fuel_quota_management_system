@@ -1,37 +1,52 @@
-import React, { useEffect } from "react";
-import './Toast.css'; // Import your CSS styles for the toast
+import React, { useEffect } from 'react';
+import './Toast.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faCheckCircle, 
+  faExclamationCircle, 
+  faInfoCircle, 
+  faTimesCircle,
+  faTimes 
+} from '@fortawesome/free-solid-svg-icons';
 
-export const Toast = ({ message, type, onClose }) => {
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            onClose();
-        }, 5000);
-        
-        return () => {
-            clearTimeout(timer);
-        };
-    }, [onClose]);
+export const Toast = ({ message, type = 'info', duration = 5000, onClose }) => {
+  useEffect(() => {
+    if (!onClose) return;
+    
+    const timer = setTimeout(() => {
+      onClose();
+    }, duration);
 
-    const getIcon = () => {
-        switch(type) {
-            case 'success': return '✓';
-            case 'error': return '✗';
-            case 'info': return 'ℹ';
-            default: return '';
-        }
-    };
+    return () => clearTimeout(timer);
+  }, [duration, onClose]);
 
-    return (
-        <div className={`toast toast-${type}`}>
-            <span className="toast-icon">{getIcon()}</span>
-            <div className="toast-message">{message}</div>
-            <button 
-                className="toast-close" 
-                onClick={onClose} 
-                aria-label="Close"
-            >
-                &times;
-            </button>
-        </div>
-    );
+  const getToastIcon = () => {
+    switch (type) {
+      case 'success':
+        return <FontAwesomeIcon icon={faCheckCircle} />;
+      case 'error':
+        return <FontAwesomeIcon icon={faExclamationCircle} />;
+      case 'warning':
+        return <FontAwesomeIcon icon={faTimesCircle} />;
+      case 'info':
+      default:
+        return <FontAwesomeIcon icon={faInfoCircle} />;
+    }
+  };
+
+  return (
+    <div className={`toast toast-${type}`} role="alert">
+      <div className="toast-icon">
+        {getToastIcon()}
+      </div>
+      <div className="toast-content">
+        {message}
+      </div>
+      {onClose && (
+        <button className="toast-close" onClick={onClose} aria-label="Close">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+      )}
+    </div>
+  );
 };

@@ -7,8 +7,7 @@ import UserLogin from "./pages/userLogin/UserLogin";
 import RegisterForm from "./pages/userVehicleregistration/VehicleRegistration";
 import "./App.css";
 import LandingPage from "./pages/landingpage/LandingPage";
-import Dashboard from "./pages/dashboard/Dashboard";
-
+import AuthenticatedDashboard from "./pages/dashboard/Dashboard";
 function App() {
   return (
     <BrowserRouter>
@@ -16,7 +15,10 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/user-login" element={<UserLogin />} />
         <Route path="/user-register" element={<RegisterForm />} />
-        <Route path="/user-dashboard" element={<Dashboard />} />
+        <Route path="/user-dashboard" element={
+            <AuthenticatedDashboard/>
+        } />
+        
       </Routes>
     </BrowserRouter>
   );

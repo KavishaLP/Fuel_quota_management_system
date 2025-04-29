@@ -72,19 +72,34 @@ const UserLogin = () => {
                 vehicleNumber: loginData.vehicleNumber,
                 password: loginData.password
             });
-
-            console.log("API Response:", response.data);
-
-            if (response.data.success) {
+    
+            console.log("Full API Response:", response); // Log entire response
+    
+            if (response.data && response.data.success) {
+                // Debug: Check what's actually in the response
+                console.log("Token in response:", response.data.token);
+    
+                // Clear any previous errors
                 setErrors({});
-                localStorage.setItem('authToken', response.data.token);
-                localStorage.setItem('userData', JSON.stringify(response.data.user));
+                
+                // Store token and user data
+                localStorage.setItem('token', response.data.token);
+                
+                // Verify storage immediately
+                console.log("Stored token:", localStorage.getItem('token'));
+    
                 addToast("Login successful! Redirecting...", "success");
-                setTimeout(() => navigate("/user-dashboard"), 1500);
+                
+                setTimeout(() => {
+                    navigate("/user-dashboard");
+                }, 1500);
             } else {
-                addToast(response.data.message || "Login failed", "error");
+                console.error("Unexpected response structure:", response.data);
+                addToast(response.data?.message || "Login failed: Unexpected response", "error");
             }
-        } catch (error) {
+        }
+
+        catch (error) {
             console.error("Login error:", error);
             
             if (error.response) {

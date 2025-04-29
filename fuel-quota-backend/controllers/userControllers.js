@@ -324,6 +324,7 @@ export const loginUser = async (req, res) => {
                 process.env.JWT_SECRET || 'fallback_secret_key_not_for_production',
                 { expiresIn: '24h' }
             );
+            console.log("Generated token:", token);
 
             // Return user data (excluding password)
             const userData = { ...user };

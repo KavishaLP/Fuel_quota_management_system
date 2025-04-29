@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./VehicleRegistration.css";
@@ -25,6 +24,30 @@ const RegisterForm = () => {
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toasts, setToasts] = useState([]);
+    const [vehicleTypes, setVehicleTypes] = useState([]);
+    const [isLoadingTypes, setIsLoadingTypes] = useState(true);
+
+    useEffect(() => {
+        // Fetch vehicle types from backend
+        const fetchVehicleTypes = async () => {
+            try {
+                const response = await axios.get("http://localhost:5000/api/vehicle-types");
+                if (response.data && response.data.success) {
+                    setVehicleTypes(response.data.data);
+                } else {
+                    console.error("Failed to load vehicle types:", response.data);
+                    addToast("Failed to load vehicle types", "error");
+                }
+            } catch (error) {
+                console.error("Error fetching vehicle types:", error);
+                addToast("Error loading vehicle types. Please refresh the page.", "error");
+            } finally {
+                setIsLoadingTypes(false);
+            }
+        };
+
+        fetchVehicleTypes();
+    }, []);
 
     const addToast = (message, type = "info") => {
         const id = Date.now() + Math.random().toString(36).substr(2, 9);
@@ -176,7 +199,8 @@ const RegisterForm = () => {
             name: "vehicleType", 
             label: "Vehicle Type", 
             type: "select",
-            options: ["", "Car", "Motorcycle", "Van", "Bus", "Lorry", "Other"],
+            options: vehicleTypes,
+            isLoading: isLoadingTypes,
             icon: faCar
         },
         { name: "vehicleNumber", label: "Vehicle Number", type: "text", placeholder: "ABC-1234", icon: faCarSide },
@@ -215,10 +239,12 @@ const RegisterForm = () => {
                                 value={formData[field.name]}
                                 onChange={handleChange}
                                 required
+                                disabled={field.isLoading}
                             >
+                                <option value="">Select {field.label.toLowerCase()}</option>
                                 {field.options.map(option => (
-                                    <option key={option} value={option}>
-                                        {option || `Select ${field.label.toLowerCase()}`}
+                                    <option key={option.id} value={option.id}>
+                                        {option.type_name}
                                     </option>
                                 ))}
                             </select>
@@ -248,7 +274,7 @@ const RegisterForm = () => {
 
                 <button 
                     type="submit" 
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isLoadingTypes}
                     className="submit-btn"
                 >
                     {isSubmitting ? (

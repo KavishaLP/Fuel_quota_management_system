@@ -32,5 +32,39 @@ CREATE TABLE vehicleowner (
     PRIMARY KEY (id)
 );
 
+-- 2. Vehicle Owners Table (modified)
+CREATE TABLE vehicleowner (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    firstName VARCHAR(50) NOT NULL,
+    lastName VARCHAR(50) NOT NULL,
+    NIC VARCHAR(20) NOT NULL UNIQUE,
+    vehicleType INT(11) NOT NULL,
+    vehicleNumber VARCHAR(20) NOT NULL UNIQUE,
+    engineNumber VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    uniqueToken VARCHAR(255) NOT NULL,
+    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    FOREIGN KEY (vehicleType) REFERENCES vehicle_types(id)
+);
+
+CREATE TABLE vehicle_types (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    type_name VARCHAR(50) NOT NULL UNIQUE,  -- Motorcycle, Car, Lorry, Bus
+    weekly_quota DECIMAL(10,2) NOT NULL,    -- Liters per week ONLY
+    PRIMARY KEY (id)
+);
+
+INSERT INTO vehicle_types (type_name, weekly_quota) VALUES
+('Motorcycle', 10.00),
+('Car', 20.00),
+('Van', 25.00),
+('SUV', 22.00),
+('Lorry', 30.00),
+('Bus', 50.00),
+('Tractor', 40.00),
+('Three Wheeler', 8.00);
+
 
 
