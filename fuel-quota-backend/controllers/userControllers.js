@@ -158,14 +158,15 @@ export const registerVehicle = async (req, res) => {
                 return;
             }
 
-            // Step 2: Check if already registered in our system
+            // Step 2: Check if vehicle is already registered in our system
+            // Modified to only check if the specific vehicle is already registered
+            // (not preventing users from registering multiple vehicles)
             const existingCheckQuery = `
                 SELECT * FROM vehicleowner 
-                WHERE vehicleNumber = ? 
-                OR (NIC = ? AND vehicleNumber != ?)
+                WHERE vehicleNumber = ?
             `;
             
-            vehicleDB.query(existingCheckQuery, [vehicleNumber, NIC, vehicleNumber], 
+            vehicleDB.query(existingCheckQuery, [vehicleNumber], 
             async (existingErr, existingResults) => {
                 if (existingErr) {
                     console.error("Vehicle DB error:", existingErr);
@@ -176,28 +177,25 @@ export const registerVehicle = async (req, res) => {
                     });
                 }
 
+                // Only check if this specific vehicle is already registered
                 if (existingResults.length > 0) {
                     const errors = {};
-                    const nicExists = existingResults.some(r => r.NIC === NIC && r.vehicleNumber !== vehicleNumber);
-                    const vehicleExists = existingResults.some(r => r.vehicleNumber === vehicleNumber);
+                    errors.vehicleNumber = "This vehicle is already registered";
                     
-                    if (nicExists) {
-                        errors.NIC = "This NIC is already registered with another vehicle";
-                    }
-                    if (vehicleExists) {
-                        errors.vehicleNumber = "This vehicle is already registered";
-                        // Check if it's registered by the same owner
-                        const sameOwner = existingResults.some(r => 
-                            r.vehicleNumber === vehicleNumber && r.NIC === NIC
-                        );
-                        if (sameOwner) {
-                            errors.general = "You have already registered this vehicle";
-                        }
+                    // Check if it's registered by the same owner
+                    const sameOwner = existingResults.some(r => 
+                        r.vehicleNumber === vehicleNumber && r.NIC === NIC
+                    );
+                    
+                    if (sameOwner) {
+                        errors.general = "You have already registered this vehicle";
+                    } else {
+                        errors.general = "This vehicle is registered by another user";
                     }
 
                     return res.status(409).json({
                         success: false,
-                        message: "Duplicate registration detected",
+                        message: "Vehicle already registered",
                         errorType: "DUPLICATE_REGISTRATION",
                         errors
                     });
