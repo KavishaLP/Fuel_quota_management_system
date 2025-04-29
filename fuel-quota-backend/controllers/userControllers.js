@@ -347,4 +347,33 @@ export const loginUser = async (req, res) => {
     }
 };
 
+export const getVehicleTypes = async (req, res) => {
+    try {
+        const query = "SELECT id, type_name FROM vehicle_types";
+        vehicleDB.query(query, (err, results) => {
+            if (err) {
+                console.error("Error fetching vehicle types:", err);
+                return res.status(500).json({
+                    success: false,
+                    message: "Database error when fetching vehicle types",
+                    errorType: "DATABASE_ERROR"
+                });
+            }
+            
+            return res.status(200).json({
+                success: true,
+                message: "Vehicle types retrieved successfully",
+                data: results
+            });
+        });
+    } catch (error) {
+        console.error("Unexpected error fetching vehicle types:", error);
+        return res.status(500).json({
+            success: false,
+            message: "An unexpected error occurred",
+            errorType: "SERVER_ERROR"
+        });
+    }
+};
+
 
