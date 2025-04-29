@@ -14,9 +14,9 @@
   --radius: 8px;
 }
 
-
-
+/* Add this block to apply Poppins font to all elements within the landing page */
 .landing-page {
+  font-family: 'Poppins', sans-serif;
   width: 100%;
   overflow-x: hidden;
 }
