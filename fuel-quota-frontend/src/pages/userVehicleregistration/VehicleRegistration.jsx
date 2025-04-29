@@ -1,11 +1,16 @@
+/* eslint-disable no-unused-vars */
+
+
 import React, { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "./VehicleRegistration.css";
 import { Toast } from '../Toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faIdCard, faCar, faKey, faCarSide, faFingerprint, faSignInAlt } from '@fortawesome/free-solid-svg-icons';
 
 const RegisterForm = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
@@ -32,7 +37,10 @@ const RegisterForm = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        // Auto-capitalize vehicle number for better UX
+        const processedValue = name === "vehicleNumber" ? value.toUpperCase() : value;
+        
+        setFormData(prev => ({ ...prev, [name]: processedValue }));
         
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: null }));
@@ -97,21 +105,10 @@ const RegisterForm = () => {
 
             console.log("Registration response:", response.data);
 
+            // Handle successful response
             if (response.data && response.data.success) {
-                // Clear any existing errors
+                // Clear form data and errors
                 setErrors({});
-                
-                // Show success message
-                addToast(response.data.message || "Vehicle registered successfully", "success");
-                
-                // Show info messages for next steps if they exist
-                if (response.data.nextSteps && Array.isArray(response.data.nextSteps)) {
-                    response.data.nextSteps.forEach(step => {
-                        addToast(step, "info");
-                    });
-                }
-
-                // Reset form
                 setFormData({
                     firstName: "",
                     lastName: "",
@@ -122,23 +119,28 @@ const RegisterForm = () => {
                     password: "",
                     rePassword: ""
                 });
-
-                // Store token if available
-                if (response.data.data?.token) {
-                    localStorage.setItem('authToken', response.data.data.token);
-                } else if (response.data.uniqueToken) {
-                    localStorage.setItem('authToken', response.data.uniqueToken);
-                }
+                
+                // Show success message
+                addToast("Vehicle registered successfully! Redirecting to login...", "success");
+                
+                // Use window.location for reliable navigation if React Router is problematic
+                setTimeout(() => {
+                    window.location.href = '/user-login';
+                }, 2500);
+                
+                return; // Exit early to avoid further processing
             } else {
+                // Handle unexpected success format
                 addToast(response.data?.message || "Registration failed", "error");
             }
-
         } catch (error) {
             console.error("Registration error:", error);
             
+            // Handle API error responses
             if (error.response) {
                 const apiError = error.response.data;
                 
+                // Handle validation errors
                 if (apiError?.errors) {
                     setErrors(apiError.errors);
                     
@@ -150,11 +152,14 @@ const RegisterForm = () => {
                         addToast(apiError.errors.general, "error");
                     }
                 } else if (apiError?.message) {
+                    // Handle general error message
                     addToast(apiError.message, "error");
                 }
             } else if (error.request) {
+                // Handle no response from server
                 addToast("No response from server. Please try again.", "error");
             } else {
+                // Handle unexpected errors
                 addToast("Registration failed. Please try again.", "error");
             }
         } finally {

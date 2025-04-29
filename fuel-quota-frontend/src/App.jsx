@@ -1,26 +1,24 @@
 //npm install @fortawesome/react-fontawesome @fortawesome/free-solid-svg-icons
 //npm install @fortawesome/react-fontawesome @fortawesome/free-solid-svg-icons
 
-
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import RegisterForm from "./pages/userVehicleregistration/VehicleRegistration";
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import UserLogin from "./pages/userLogin/UserLogin";
-import Dashboard from "./pages/dashboard/Dashboard";
+import RegisterForm from "./pages/userVehicleregistration/VehicleRegistration";
 import "./App.css";
 import LandingPage from "./pages/landingpage/LandingPage";
+import Dashboard from "./pages/dashboard/Dashboard";
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        {/* Redirect the root path to /register */}
-        <Route path="/" element={<LandingPage/>} />
-        <Route path="/user-register" element={<RegisterForm />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/user-login" element={<UserLogin />} />
-       
+        <Route path="/user-register" element={<RegisterForm />} />
         <Route path="/user-dashboard" element={<Dashboard />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
 
