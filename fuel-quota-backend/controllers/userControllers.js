@@ -244,12 +244,7 @@ export const registerVehicle = async (req, res) => {
                                     year: motorTrafficResults[0].year
                                 },
                                 token: uniqueToken
-                            },
-                            nextSteps: [
-                                "Save your registration details",
-                                "Use your token to generate QR code",
-                                "Login to access your fuel quota"
-                            ]
+                            }
                         });
                     });
                 } catch (processingError) {
@@ -274,40 +269,40 @@ export const registerVehicle = async (req, res) => {
 
 export const loginUser = async (req, res) => {
     console.log("Login request received:", req.body);
-    const { NIC, password } = req.body;
+    const { vehicleNumber, password } = req.body;
 
     // Validate required fields
-    if (!NIC || !password) {
-        console.log("Missing fields:", { NIC, password });
+    if (!vehicleNumber || !password) {
+        console.log("Missing fields:", { vehicleNumber, password });
         return res.status(400).json({
             success: false,
-            message: "NIC and password are required",
+            message: "Vehicle Number and password are required",
             errorType: "VALIDATION_ERROR",
             errors: {
-                NIC: !NIC ? "NIC is required" : null,
+                vehicleNumber: !vehicleNumber ? "Vehicle Number is required" : null,
                 password: !password ? "Password is required" : null
             }
         });
     }
 
-    // Validate NIC format
-    if (!/^([0-9]{9}[vVxX]|[0-9]{12})$/.test(NIC)) {
-        console.log("Invalid NIC format:", NIC);
+    // Validate Vehicle Number format
+    if (!/^[A-Z]{2,3}-\d{4}$/.test(vehicleNumber)) {
+        console.log("Invalid Vehicle Number format:", vehicleNumber);
         return res.status(400).json({
             success: false,
-            message: "Invalid NIC format",
+            message: "Invalid Vehicle Number format",
             errorType: "VALIDATION_ERROR",
             errors: {
-                NIC: "Valid formats: 123456789V or 123456789012"
+                vehicleNumber: "Format: ABC-1234 (uppercase)"
             }
         });
     }
 
     try {
-        console.log("Checking user in database...");
-        const userQuery = "SELECT * FROM vehicleowner WHERE NIC = ?";
+        console.log("Checking vehicle in database...");
+        const userQuery = "SELECT * FROM vehicleowner WHERE vehicleNumber = ?";
         
-        vehicleDB.query(userQuery, [NIC], async (err, results) => {
+        vehicleDB.query(userQuery, [vehicleNumber], async (err, results) => {
             if (err) {
                 console.error("Database error:", err);
                 return res.status(500).json({
@@ -320,13 +315,13 @@ export const loginUser = async (req, res) => {
             console.log("Database results:", results);
             
             if (results.length === 0) {
-                console.log("No user found with NIC:", NIC);
+                console.log("No vehicle found with number:", vehicleNumber);
                 return res.status(401).json({
                     success: false,
                     message: "Invalid credentials",
                     errorType: "AUTH_ERROR",
                     errors: {
-                        NIC: "No account found with this NIC"
+                        vehicleNumber: "No account found with this Vehicle Number"
                     }
                 });
             }
@@ -387,11 +382,7 @@ export const loginUser = async (req, res) => {
                             model: vehicleDetails.model || 'Unknown',
                             year: vehicleDetails.year || 'Unknown'
                         }
-                    },
-                    nextSteps: [
-                        "Use your token to authenticate requests",
-                        "Token expires in 1 hour"
-                    ]
+                    }
                 });
             });
         });
