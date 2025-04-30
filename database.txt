@@ -70,15 +70,54 @@ sss
 CREATE TABLE fuel_quotas (
     id INT(11) NOT NULL AUTO_INCREMENT,
     vehicle_id INT(11) NOT NULL,
-    year SMALLINT NOT NULL,
-    week TINYINT NOT NULL,
     vehicle_type_id INT(11) NOT NULL,  -- Direct reference to vehicle_types
+
     remaining_quota DECIMAL(5,2) NOT NULL,
+    week_start_date DATE NOT NULL,
+    week_end_date DATE NOT NULL,
+
     PRIMARY KEY (id),
     FOREIGN KEY (vehicle_id) REFERENCES vehicleowner(id),
     FOREIGN KEY (vehicle_type_id) REFERENCES vehicle_types(id),
-    UNIQUE KEY unique_vehicle_week (vehicle_id, year, week),
+
+    UNIQUE KEY unique_vehicle_week (vehicle_id, week_start_date),  -- Prevent duplicate entry for same week
     INDEX idx_vehicle_type (vehicle_type_id)  -- For faster type-based queries
 );
 
+CREATE TABLE fuel_transactions (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    quota_id INT(11) NOT NULL,               -- Reference to fuel_quotas
+    vehicle_id INT(11) NOT NULL,             -- Direct vehicle reference
+    station_id INT(11) NOT NULL,             -- Reference to fuel stations table
+    transaction_time DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),  -- Millisecond precision
+    amount DECIMAL(5,2) NOT NULL,            -- Liters dispensed
+    pump_operator VARCHAR(50) NOT NULL,      -- Who performed the transaction
+    receipt_number VARCHAR(20) UNIQUE,       -- Official receipt ID
+    status ENUM('completed','canceled','pending') DEFAULT 'completed',
+    
+    PRIMARY KEY (id),
+    FOREIGN KEY (quota_id) REFERENCES fuel_quotas(id),
+    FOREIGN KEY (vehicle_id) REFERENCES vehicleowner(id),
+    FOREIGN KEY (station_id) REFERENCES fuel_stations(id),  -- Assuming this table exists
+    
+    INDEX idx_quota_usage (quota_id, transaction_time),  -- For quota history
+    INDEX idx_vehicle_history (vehicle_id, transaction_time DESC)  -- For vehicle reports
+);
+
+CREATE TABLE fuel_stations (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    authorized BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE fuel_operators (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    station_id INT(11) NOT NULL,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    display_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (station_id) REFERENCES fuel_stations(id)
+);
 
