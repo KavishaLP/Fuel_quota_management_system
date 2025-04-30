@@ -5,6 +5,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import cookieParser from 'cookie-parser';
 import userRoutes from "./routes/userRoutes.js";
+import userMainRoutes from "./routes/userMainRoutes.js";
 import {validateToken} from "./middleware/authMiddleware.js";
 
 const app = express();
@@ -27,6 +28,7 @@ app.use(cookieParser());
 
 // Routes
 app.use("/api", userRoutes);
+app.use("/userapi", userMainRoutes);
 
 
 // Token verification endpoint

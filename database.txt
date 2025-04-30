@@ -69,7 +69,7 @@ sss
 
 CREATE TABLE fuel_quotas (
     id INT(11) NOT NULL AUTO_INCREMENT,
-    vehicle_id INT(11) NOT NULL,
+    vehicle_owner_id INT(11) NOT NULL,
     vehicle_type_id INT(11) NOT NULL,  -- Direct reference to vehicle_types
 
     remaining_quota DECIMAL(5,2) NOT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE fuel_quotas (
     week_end_date DATE NOT NULL,
 
     PRIMARY KEY (id),
-    FOREIGN KEY (vehicle_id) REFERENCES vehicleowner(id),
+    FOREIGN KEY (vehicle_owner_id) REFERENCES vehicleowner(id),
     FOREIGN KEY (vehicle_type_id) REFERENCES vehicle_types(id),
 
     UNIQUE KEY unique_vehicle_week (vehicle_id, week_start_date),  -- Prevent duplicate entry for same week
