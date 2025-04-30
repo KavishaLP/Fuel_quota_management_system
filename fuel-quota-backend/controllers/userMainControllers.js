@@ -1,56 +1,42 @@
-import QRCode from 'qrcode';
-import db from '../config/database.js';
-import { promisify } from 'util';
+import { vehicleDB } from "../config/sqldb.js";
 
-// Convert QR code generation to promise-based
-const generateQRCode = promisify(QRCode.toDataURL);
 
-export const generateVehicleQRCode = async (req, res) => {
-    try {
-        const { vehicleId } = req.params;
-        
-        // Get vehicle owner details from database
-        const [results] = await db.query(
-            `SELECT vehicleNumber, uniqueToken, firstName, lastName 
-             FROM vehicleowner 
-             WHERE id = ?`,
-            [vehicleId]
-        );
+export const getVehicleOwnerById = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-        if (results.length === 0) {
-            return res.status(404).json({ success: false, message: 'Vehicle owner not found' });
-        }
-
-        const vehicleData = results[0];
-        
-        // Create the data to encode in QR code
-        const qrData = JSON.stringify({
-            vehicleId,
-            vehicleNumber: vehicleData.vehicleNumber,
-            owner: `${vehicleData.firstName} ${vehicleData.lastName}`,
-            token: vehicleData.uniqueToken,
-            timestamp: new Date().toISOString()
-        });
-
-        // Generate QR code
-        const qrCodeDataUrl = await generateQRCode(qrData, { 
-            errorCorrectionLevel: 'H',
-            width: 300,
-            margin: 2
-        });
-
-        // Return the QR code data URL
-        res.status(200).json({
-            success: true,
-            qrCode: qrCodeDataUrl,
-            vehicleNumber: vehicleData.vehicleNumber
-        });
-    } catch (error) {
-        console.error('QR code generation error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to generate QR code',
-            error: error.message
-        });
+    if (!id) {
+      return res.status(400).json({ error: "Owner ID is required" });
     }
+
+    const query = `
+      SELECT 
+        id, 
+        firstName, 
+        lastName, 
+        vehicleNumber, 
+        uniqueToken,
+        vehicleType,
+        engineNumber
+      FROM vehicleowner 
+      WHERE id = ?
+    `;
+
+    vehicleDB.query(query, [id], (error, results) => {
+      if (error) {
+        console.error("Database error:", error);
+        return res.status(500).json({ error: "Database error" });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({ error: "Vehicle owner not found" });
+      }
+
+      const ownerData = results[0];
+      res.json(ownerData);
+    });
+  } catch (error) {
+    console.error("Server error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
 };

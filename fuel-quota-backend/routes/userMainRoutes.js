@@ -1,10 +1,9 @@
 import express from "express";
-import { generateVehicleQRCode } from "../controllers/userMainControllers.js";
-import { validateToken } from "../middleware/authMiddleware.js";
+import { getVehicleOwnerById } from "../controllers/userMainControllers.js";
+
 
 const router = express.Router();
 
-// Route to generate QR code
-router.get('/vehicles/:vehicleId/qrcode', validateToken, generateVehicleQRCode);
+router.get("/vehicleowners/:id", getVehicleOwnerById);
 
 export default router;
