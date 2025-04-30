@@ -1,9 +1,12 @@
+/* eslint-disable no-unused-vars */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import withAuth from '../withAuth';
 import './Dashboard.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faGasPump, faQrcode, faHistory, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { faGasPump, faQrcode, faHistory, faSignOutAlt, faDownload } from '@fortawesome/free-solid-svg-icons';
+import axios from 'axios';
 
 const Dashboard = ({ userId }) => {
   const navigate = useNavigate();
@@ -11,6 +14,8 @@ const Dashboard = ({ userId }) => {
   const [quotaInfo, setQuotaInfo] = useState(null);
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [qrCode, setQrCode] = useState(null);
+  const [qrLoading, setQrLoading] = useState(false);
 
   useEffect(() => {
     // Fetch user data and quota information
@@ -30,6 +35,11 @@ const Dashboard = ({ userId }) => {
         const transactionsData = await transactionsResponse.json();
         setRecentTransactions(transactionsData);
 
+        // Fetch QR code if we have a vehicle ID
+        if (storedData.vehicleId) {
+          fetchQrCode(storedData.vehicleId);
+        }
+
       } catch (error) {
         console.error("Dashboard data error:", error);
       } finally {
@@ -40,6 +50,26 @@ const Dashboard = ({ userId }) => {
     fetchData();
   }, [userId]);
 
+  const fetchQrCode = async (vehicleId) => {
+    setQrLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/userapi/vehicles/${vehicleId}/qrcode`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      if (response.data.success) {
+        setQrCode(response.data.qrCode);
+      }
+    } catch (error) {
+      console.error("Error fetching QR code:", error);
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userData');
@@ -47,8 +77,21 @@ const Dashboard = ({ userId }) => {
   };
 
   const downloadQRCode = () => {
-    // API call to generate/download QR code
-    window.open(`/api/vehicles/${userData.vehicleId}/qrcode`, '_blank');
+    if (!qrCode) return;
+
+    // Create a temporary anchor element
+    const link = document.createElement('a');
+    link.href = qrCode;
+    link.download = `vehicle-qr-${userData?.vehicleNumber || 'code'}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const regenerateQRCode = () => {
+    if (userData?.vehicleId) {
+      fetchQrCode(userData.vehicleId);
+    }
   };
 
   if (loading) {
@@ -76,29 +119,6 @@ const Dashboard = ({ userId }) => {
       </header>
 
       <div className="dashboard-content">
-        {/* Fuel Quota Card */}
-        <div className="dashboard-card quota-card">
-          <div className="card-header">
-            <FontAwesomeIcon icon={faGasPump} className="card-icon" />
-            <h3>Weekly Fuel Quota</h3>
-          </div>
-          <div className="quota-meter">
-            <div 
-              className="quota-progress"
-              style={{ width: `${quotaInfo ? (quotaInfo.used/quotaInfo.total)*100 : 0}%` }}
-            ></div>
-            <div className="quota-numbers">
-              <span className="remaining">
-                {quotaInfo ? quotaInfo.total - quotaInfo.used : '--'}L remaining
-              </span>
-              <span className="total">of {quotaInfo?.total || '--'}L</span>
-            </div>
-          </div>
-          <div className="quota-dates">
-            Valid: {quotaInfo?.weekStart || '--'} to {quotaInfo?.weekEnd || '--'}
-          </div>
-        </div>
-
         {/* QR Code Card */}
         <div className="dashboard-card qr-card">
           <div className="card-header">
@@ -106,53 +126,33 @@ const Dashboard = ({ userId }) => {
             <h3>Vehicle QR Code</h3>
           </div>
           <div className="qr-container">
-            {userData?.qrCode ? (
-              <img src={userData.qrCode} alt="Vehicle QR Code" className="qr-image" />
+            {qrLoading ? (
+              <div className="qr-loading">
+                <div className="spinner small"></div>
+                <p>Generating QR code...</p>
+              </div>
+            ) : qrCode ? (
+              <img src={qrCode} alt="Vehicle QR Code" className="qr-image" />
             ) : (
-              <p>No QR code generated</p>
+              <p>No QR code available. Click regenerate to create one.</p>
             )}
           </div>
-          <button onClick={downloadQRCode} className="download-btn">
-            Download QR Code
-          </button>
-        </div>
-
-        {/* Recent Transactions */}
-        <div className="dashboard-card transactions-card">
-          <div className="card-header">
-            <FontAwesomeIcon icon={faHistory} className="card-icon" />
-            <h3>Recent Fuel Transactions</h3>
+          <div className="qr-actions">
+            <button 
+              onClick={downloadQRCode} 
+              className="action-btn download-btn"
+              disabled={!qrCode || qrLoading}
+            >
+              <FontAwesomeIcon icon={faDownload} /> Download QR Code
+            </button>
+            <button 
+              onClick={regenerateQRCode} 
+              className="action-btn regenerate-btn"
+              disabled={qrLoading}
+            >
+              <FontAwesomeIcon icon={faQrcode} /> Regenerate
+            </button>
           </div>
-          <div className="transactions-list">
-            {recentTransactions.length > 0 ? (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Station</th>
-                    <th>Amount (L)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentTransactions.map((txn, index) => (
-                    <tr key={index}>
-                      <td>{new Date(txn.date).toLocaleDateString()}</td>
-                      <td>{txn.stationName}</td>
-                      <td>{txn.amount}L</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="no-transactions">No recent transactions found</p>
-            )}
-          </div>
-          <button 
-            onClick={() => navigate('/transactions')} 
-            className="view-all-btn"
-          >
-            View All Transactions
-          </button>
         </div>
       </div>
     </div>
