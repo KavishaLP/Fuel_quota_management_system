@@ -55,16 +55,30 @@ CREATE TABLE vehicle_types (
     weekly_quota DECIMAL(10,2) NOT NULL,    -- Liters per week ONLY
     PRIMARY KEY (id)
 );
+sss
+    INSERT INTO vehicle_types (type_name, weekly_quota) VALUES
+    ('Motorcycle', 10.00),
+    ('Car', 20.00),
+    ('Van', 25.00),
+    ('SUV', 22.00),
+    ('Lorry', 30.00),
+    ('Bus', 50.00),
+    ('Tractor', 40.00),
+    ('Three Wheeler', 8.00);
 
-INSERT INTO vehicle_types (type_name, weekly_quota) VALUES
-('Motorcycle', 10.00),
-('Car', 20.00),
-('Van', 25.00),
-('SUV', 22.00),
-('Lorry', 30.00),
-('Bus', 50.00),
-('Tractor', 40.00),
-('Three Wheeler', 8.00);
 
+CREATE TABLE fuel_quotas (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    vehicle_id INT(11) NOT NULL,
+    year SMALLINT NOT NULL,
+    week TINYINT NOT NULL,
+    vehicle_type_id INT(11) NOT NULL,  -- Direct reference to vehicle_types
+    remaining_quota DECIMAL(5,2) NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (vehicle_id) REFERENCES vehicleowner(id),
+    FOREIGN KEY (vehicle_type_id) REFERENCES vehicle_types(id),
+    UNIQUE KEY unique_vehicle_week (vehicle_id, year, week),
+    INDEX idx_vehicle_type (vehicle_type_id)  -- For faster type-based queries
+);
 
 
