@@ -2,74 +2,72 @@
 import { vehicleDB } from '../config/sqldb.js';
 import cron from 'node-cron';
 
-/**
- * Updates ALL fuel quotas to their maximum values and sets new week dates
- */
-const resetWeeklyQuotas = async () => {
-  try {
-    // Calculate current week (Monday to Sunday)
-    const currentDate = new Date();
-    const weekStart = new Date(currentDate);
-    weekStart.setDate(currentDate.getDate() - currentDate.getDay() + 1); // Monday
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6); // Sunday
+// Function to get the current week's start and end dates
+function getWeekDates() {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 (Sunday) to 6 (Saturday)
+    const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Adjust to get Monday
     
-    const formattedWeekStart = weekStart.toISOString().split('T')[0];
-    const formattedWeekEnd = weekEnd.toISOString().split('T')[0];
+    const startDate = new Date(now);
+    startDate.setDate(now.getDate() - diffToMonday);
+    startDate.setHours(0, 0, 0, 0);
+    
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6);
+    endDate.setHours(23, 59, 59, 999);
+    
+    return { startDate, endDate };
+}
 
-    console.log(`🔄 Starting weekly quota reset for week ${formattedWeekStart} to ${formattedWeekEnd}`);
-
-    await vehicleDB.beginTransaction();
-
+// Main function to reset quotas
+export async function resetFuelQuotas() {
     try {
-      // Update ALL quota records with new values and dates
-      const [updateResult] = await vehicleDB.query(`
-        UPDATE fuel_quotas fq
-        JOIN vehicle_types vt ON fq.vehicle_type_id = vt.id
-        SET 
-          fq.remaining_quota = vt.weekly_quota,
-          fq.week_start_date = ?,
-          fq.week_end_date = ?
-      `, [formattedWeekStart, formattedWeekEnd]);
-      
-      await vehicleDB.commit();
-      console.log(`✅ Successfully updated ${updateResult.affectedRows} quotas for week ${formattedWeekStart}-${formattedWeekEnd}`);
+        const { startDate, endDate } = getWeekDates();
+        
+        // Get all vehicle types with their weekly quotas
+        const vehicleTypes = await vehicleDB.query(
+            'SELECT id, weekly_quota FROM vehicle_types'
+        );
+        
+        // Create a map of vehicle type IDs to their weekly quotas
+        const quotaMap = {};
+        vehicleTypes[0].forEach(type => {
+            quotaMap[type.id] = type.weekly_quota;
+        });
+        
+        // Update all fuel quotas with the new values and week dates
+        const [result] = await vehicleDB.query(
+            `UPDATE fuel_quotas 
+             SET 
+                 remaining_quota = ?, 
+                 week_start_date = ?, 
+                 week_end_date = ?
+             WHERE vehicle_type_id = ?`,
+            [quotaMap[vehicle_type_id], startDate, endDate, vehicle_type_id]
+        );
+        
+        console.log(`Successfully reset ${result.affectedRows} fuel quotas for the week starting ${startDate}`);
+        return true;
     } catch (error) {
-      await vehicleDB.rollback();
-      console.error('❌ Quota reset failed:', error.message);
-      throw error;
+        console.error('Error resetting fuel quotas:', error);
+        throw error;
     }
-  } catch (error) {
-    console.error('🚨 Error in weekly quota reset:', error.message);
-  }
-};
+}
 
-/**
- * Initializes the weekly quota reset scheduler
- */
-export const initQuotaResetScheduler = () => {
-  // Schedule to run every Monday at 00:00 AM (Colombo time)
-  const job = cron.schedule('0 0 * * 1', resetWeeklyQuotas, {
-    scheduled: true,
-    timezone: "Asia/Colombo"
-  });
-
-  // Log next run times for verification
-  const nextRuns = job.nextDates(3);
-  console.log('⏰ Automatic weekly quota reset scheduler initialized');
-  console.log('📅 Next reset times:');
-  nextRuns.forEach((date, i) => {
-    console.log(`   ${i+1}. ${date.toLocaleString('en-US', { 
-      timeZone: 'Asia/Colombo',
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      year: 'numeric',
-      timeZoneName: 'short'
-    })}`);
-  });
-
-  return job;
-};
+// Initialize the weekly reset job
+export function initWeeklyReset() {
+    // Schedule to run every Monday at 00:01 AM
+    cron.schedule('1 0 * * 1', async () => {
+        console.log('Running weekly fuel quota reset...');
+        try {
+            await resetFuelQuotas();
+        } catch (error) {
+            console.error('Failed to run weekly fuel quota reset:', error);
+        }
+    }, {
+        scheduled: true,
+        timezone: 'Asia/Colombo' // Adjust to your timezone
+    });
+    
+    console.log('Weekly fuel quota reset job initialized');
+}
