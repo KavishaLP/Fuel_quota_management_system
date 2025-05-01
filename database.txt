@@ -117,19 +117,17 @@ CREATE TABLE fuel_transactions (
 );
 
 CREATE TABLE fuel_stations (
-    id INT(11) NOT NULL AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL,
-    location VARCHAR(255) NOT NULL,
-    authorized BOOLEAN DEFAULT FALSE,
-    PRIMARY KEY (id)
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    nic VARCHAR(12) NOT NULL UNIQUE,
+    contact_number1 VARCHAR(15),
+    contact_number2 VARCHAR(15),
+    email1 VARCHAR(100),
+    email2 VARCHAR(100),
+    fuel_station_name VARCHAR(100) NOT NULL,
+    station_registration_number VARCHAR(50) NOT NULL UNIQUE,
+    location VARCHAR(200) NOT NULL,
+    registered_date DATE NOT NULL
 );
 
-CREATE TABLE fuel_operators (
-    id INT(11) NOT NULL AUTO_INCREMENT,
-    station_id INT(11) NOT NULL,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    display_name VARCHAR(100) NOT NULL,
-    PRIMARY KEY (id),
-    FOREIGN KEY (station_id) REFERENCES fuel_stations(id)
-);
 

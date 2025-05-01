@@ -6,6 +6,8 @@ import cors from "cors";
 import cookieParser from 'cookie-parser';
 import userRoutes from "./routes/userRoutes.js";
 import userMainRoutes from "./routes/userMainRoutes.js";
+import shedOwnerRoutes from "./routes/shedOwnerRoutes.js";
+import shedOwnerMainRoutes from "./routes/shedOwnerMainRoutes.js";
 import {validateToken} from "./middleware/authMiddleware.js";
 
 const app = express();
@@ -30,6 +32,8 @@ app.use(cookieParser());
 app.use("/api", userRoutes);
 app.use("/userapi", userMainRoutes);
 
+app.use("/shedapi", shedOwnerRoutes);
+app.use("/shedownerapi", shedOwnerMainRoutes);
 
 // Token verification endpoint
 app.get('/api/verify-token', validateToken, (req, res) => {
