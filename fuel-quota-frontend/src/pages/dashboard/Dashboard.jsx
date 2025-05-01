@@ -6,11 +6,12 @@ import { QRCodeSVG } from 'qrcode.react';
 import './Dashboard.css';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { FaQrcode, FaDownload, FaTimes, FaCar, FaUser, FaEnvelope, FaPhone, FaSignOutAlt } from 'react-icons/fa';
+import { FaQrcode, FaDownload, FaTimes, FaCar, FaUser, FaEnvelope, FaPhone, FaSignOutAlt, FaCalendarAlt, FaGasPump } from 'react-icons/fa';
 
 const Dashboard = ({ userId }) => {
   const [showQRModal, setShowQRModal] = useState(false);
   const [ownerData, setOwnerData] = useState(null);
+  const [lastTransaction, setLastTransaction] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -22,6 +23,16 @@ const Dashboard = ({ userId }) => {
         setLoading(true);
         const response = await axios.get(`http://localhost:5000/userapi/vehicleowners/${userId}`);
         setOwnerData(response.data);
+        
+        // Fetch latest transaction
+        try {
+          const transactionRes = await axios.get(`http://localhost:5000/userapi/vehicleowners/${userId}/latest-transaction`);
+          if (transactionRes.data && transactionRes.data.data) {
+            setLastTransaction(transactionRes.data.data.lastRefuel);
+          }
+        } catch (transactionError) {
+          console.log("No transaction data available", transactionError);
+        }
       } catch (err) {
         setError(err.message || 'Failed to fetch owner data');
       } finally {
@@ -47,10 +58,8 @@ const Dashboard = ({ userId }) => {
   };
   
   const handleLogout = () => {
-    // Clear any auth tokens/user data from localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
-    // Navigate to login page
     navigate('/user-login');
   };
 
@@ -78,6 +87,14 @@ const Dashboard = ({ userId }) => {
     };
     
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not available';
+    
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
   if (loading) return (
@@ -164,21 +181,49 @@ const Dashboard = ({ userId }) => {
 
           <div className="dashboard-card quota-card">
             <div className="card-header">
-              <div className="card-icon fuel-icon">⛽</div>
+              <FaGasPump className="card-icon" />
               <h2>Fuel Quota Status</h2>
             </div>
             <div className="card-content">
-              <div className="fuel-quota-container">
-                <div className="fuel-gauge">
-                  <div className="fuel-level" style={{ width: `${ownerData?.quotaPercentage || 75}%` }}></div>
+              {ownerData && ownerData.remaining_quota !== undefined ? (
+                <>
+                  <div className="fuel-quota-container">
+                    <div className="fuel-gauge">
+                      <div 
+                        className={`fuel-level ${ownerData.quotaPercentage < 20 ? 'low' : ''}`}
+                        style={{ width: `${ownerData.quotaPercentage}%` }}
+                      ></div>
+                    </div>
+                    <div className="quota-text">
+                      <span className={ownerData.remaining_quota < 5 ? 'critical' : ''}>
+                        {Number(ownerData.remaining_quota).toFixed(2)} liters
+                      </span> remaining of <span>{Number(ownerData.weekly_quota).toFixed(2)} liters</span>
+                    </div>
+                  </div>
+                  
+                  <div className="quota-details">
+                    <div className="info-row">
+                      <span className="info-label"><FaCalendarAlt /> Weekly Period</span>
+                      <span className="info-value">
+                        {formatDate(ownerData.week_start_date)} - {formatDate(ownerData.week_end_date)}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="last-refuel">
+                    {lastTransaction ? (
+                      <>Last refuel: {formatDate(lastTransaction.date)} - {lastTransaction.amount} liters at {lastTransaction.station}</>
+                    ) : (
+                      <>No recent refueling activity</>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="no-quota-info">
+                  <p>No active fuel quota found for this week.</p>
+                  <p>Please contact fuel quota administration for assistance.</p>
                 </div>
-                <div className="quota-text">
-                  <span>{ownerData?.quotaRemaining || 15} liters</span> remaining of <span>{ownerData?.quotaTotal || 20} liters</span>
-                </div>
-              </div>
-              <div className="last-refuel">
-                Last refuel: {ownerData?.lastRefuelDate || 'April 27, 2025'}
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -192,18 +237,21 @@ const Dashboard = ({ userId }) => {
             </div>
             <div className="card-content">
               <div className="activity-list">
-                <div className="activity-item">
-                  <div className="activity-date">April 27, 2025</div>
-                  <div className="activity-details">Refueled 12.5 liters at Shell Station</div>
-                </div>
-                <div className="activity-item">
-                  <div className="activity-date">April 15, 2025</div>
-                  <div className="activity-details">Quota updated to 20 liters</div>
-                </div>
-                <div className="activity-item">
-                  <div className="activity-date">April 10, 2025</div>
-                  <div className="activity-details">Refueled 7.5 liters at Caltex Station</div>
-                </div>
+                {lastTransaction ? (
+                  <div className="activity-item">
+                    <div className="activity-date">{formatDate(lastTransaction.date)}</div>
+                    <div className="activity-details">
+                      Refueled {lastTransaction.amount} liters at {lastTransaction.station}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="activity-item">
+                    <div className="activity-date">No recent activity</div>
+                    <div className="activity-details">
+                      Your fuel activity history will appear here
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
