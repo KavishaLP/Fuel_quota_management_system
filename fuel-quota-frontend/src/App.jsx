@@ -12,7 +12,7 @@ import AuthenticatedDashboard from "./pages/dashboard/Dashboard";
 
 import ShedOwnerRegister from "./pages/shedOwnerRegister/shedOwnerRegister";
 import ShedOwnerLogin from "./pages/shedOwnerLogin/shedOwnerLogin";
-import ShedOwnerDashboard from "./pages/shedOwnerDashboard/shedOwnerDashboard";
+import AuthenticatedshedOwnerDashboard from "./pages/shedOwnerDashboard/shedOwnerDashboard";
 
 function App() {
   return (
@@ -24,13 +24,14 @@ function App() {
         <Route path="/shed-owner-register" element={<ShedOwnerRegister />} />
         <Route path="/shed-owner-login" element={<ShedOwnerLogin />} />
 
+
         <Route path="/user-dashboard" element={
             <AuthenticatedDashboard/>
         } />
 
 
         <Route path="/shed-owner-dashboard" element={
-            <AuthenticatedDashboard/>
+            <AuthenticatedshedOwnerDashboard/>
         } />        
         
       </Routes>

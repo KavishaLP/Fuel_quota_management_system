@@ -1,13 +1,15 @@
-import React from 'react';
-import withAuth from '../withAuth';
+/* eslint-disable no-unused-vars */
 
-const shedOwnerDashboard = () => {
+import React from 'react';
+import withAuth2 from '../withAuth2';
+
+const shedOwnerDashboard = ({ userId }) => {
   return (
     <div>
-      HIIII
+      { userId }
     </div>
   )
 }
 
-const AuthenticatedshedOwnerDashboard = withAuth(shedOwnerDashboard);  
+const AuthenticatedshedOwnerDashboard = withAuth2(shedOwnerDashboard);  
 export default AuthenticatedshedOwnerDashboard;

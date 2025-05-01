@@ -75,7 +75,6 @@ const ShedOwnerLogin = () => {
                 
                 // Store token and shed owner data
                 localStorage.setItem('shedToken', response.data.token);
-                localStorage.setItem('shedOwnerId', response.data.shedOwnerId);
                 
                 // Verify storage immediately
                 console.log("Stored token:", localStorage.getItem('shedToken'));
