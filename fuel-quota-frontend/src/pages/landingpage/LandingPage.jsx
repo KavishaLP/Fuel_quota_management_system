@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -10,11 +10,14 @@ import {
   faSignInAlt,
   faChartLine,
   faQuestionCircle,
-  faShieldAlt
+  faShieldAlt,
+  faStore,
+  faTimes
 } from '@fortawesome/free-solid-svg-icons';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const [showShedOwnerModal, setShowShedOwnerModal] = useState(false);
 
   const handleRegisterClick = () => {
     navigate('/user-register');
@@ -22,6 +25,20 @@ const LandingPage = () => {
 
   const handleLoginClick = () => {
     navigate('/user-login');
+  };
+
+  const handleShedOwnerClick = () => {
+    setShowShedOwnerModal(true);
+  };
+
+  const handleShedOwnerLogin = () => {
+    setShowShedOwnerModal(false);
+    navigate('/shed-owner-login');
+  };
+
+  const handleShedOwnerRegister = () => {
+    setShowShedOwnerModal(false);
+    navigate('/shed-owner-register');
   };
 
   return (
@@ -74,11 +91,41 @@ const LandingPage = () => {
               Learn More
             </button>
           </div>
+          <div className="shed-owner-section">
+            <button className="shed-owner-button" onClick={handleShedOwnerClick}>
+              <FontAwesomeIcon icon={faStore} /> Fuel Shed Owner Portal
+            </button>
+          </div>
         </div>
         <div className="hero-image">
           <img src="/images/fuel-quota.svg" alt="Fuel Quota System Illustration" />
         </div>
       </section>
+
+      {/* Shed Owner Modal Popup */}
+      {showShedOwnerModal && (
+        <div className="modal-overlay">
+          <div className="modal-content shed-owner-modal">
+            <div className="modal-header">
+              <h2><FontAwesomeIcon icon={faStore} /> Fuel Shed Owner Portal</h2>
+              <button className="close-button" onClick={() => setShowShedOwnerModal(false)}>
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>Access the fuel station management system to track quotas and manage fuel dispensing</p>
+              <div className="modal-buttons">
+                <button className="modal-button login" onClick={handleShedOwnerLogin}>
+                  <FontAwesomeIcon icon={faSignInAlt} /> Login as Shed Owner
+                </button>
+                <button className="modal-button register" onClick={handleShedOwnerRegister}>
+                  <FontAwesomeIcon icon={faUserPlus} /> Register Your Fuel Station
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Features */}
       <section id="features" className="features-section">

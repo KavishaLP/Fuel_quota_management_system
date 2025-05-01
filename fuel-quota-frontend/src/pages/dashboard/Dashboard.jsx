@@ -109,95 +109,101 @@ const Dashboard = ({ userId }) => {
       </div>
       
       <div className="dashboard-grid">
-        <div className="dashboard-card profile-card">
-          <div className="card-header">
-            <FaUser className="card-icon" />
-            <h2>Personal Information</h2>
+        {/* Top row: Three equal columns */}
+        <div className="top-row">
+          <div className="dashboard-card profile-card">
+            <div className="card-header">
+              <FaUser className="card-icon" />
+              <h2>Personal Information</h2>
+            </div>
+            {ownerData && (
+              <div className="card-content">
+                <div className="info-row">
+                  <span className="info-label">Full Name</span>
+                  <span className="info-value">{ownerData.firstName} {ownerData.lastName}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Email</span>
+                  <span className="info-value">{ownerData.email || 'Not provided'}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Phone</span>
+                  <span className="info-value">{ownerData.contactNumber || 'Not provided'}</span>
+                </div>
+              </div>
+            )}
           </div>
-          {ownerData && (
+
+          <div className="dashboard-card vehicle-card">
+            <div className="card-header">
+              <FaCar className="card-icon" />
+              <h2>Vehicle Information</h2>
+            </div>
+            {ownerData && (
+              <div className="card-content">
+                <div className="info-row">
+                  <span className="info-label">Vehicle Number</span>
+                  <span className="info-value highlight">{ownerData.vehicleNumber}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Engine Number</span>
+                  <span className="info-value">{ownerData.engineNumber}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Vehicle Type</span>
+                  <span className="info-value">{ownerData.vehicleType || 'Standard'}</span>
+                </div>
+                <div className="qr-button-container">
+                  <button className="qr-button" onClick={handleQRCodeClick}>
+                    <FaQrcode className="button-icon" /> Generate QR Code
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="dashboard-card quota-card">
+            <div className="card-header">
+              <div className="card-icon fuel-icon">⛽</div>
+              <h2>Fuel Quota Status</h2>
+            </div>
             <div className="card-content">
-              <div className="info-row">
-                <span className="info-label">Full Name</span>
-                <span className="info-value">{ownerData.firstName} {ownerData.lastName}</span>
+              <div className="fuel-quota-container">
+                <div className="fuel-gauge">
+                  <div className="fuel-level" style={{ width: `${ownerData?.quotaPercentage || 75}%` }}></div>
+                </div>
+                <div className="quota-text">
+                  <span>{ownerData?.quotaRemaining || 15} liters</span> remaining of <span>{ownerData?.quotaTotal || 20} liters</span>
+                </div>
               </div>
-              <div className="info-row">
-                <span className="info-label">Email</span>
-                <span className="info-value">{ownerData.email || 'Not provided'}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Phone</span>
-                <span className="info-value">{ownerData.contactNumber || 'Not provided'}</span>
+              <div className="last-refuel">
+                Last refuel: {ownerData?.lastRefuelDate || 'April 27, 2025'}
               </div>
             </div>
-          )}
+          </div>
         </div>
 
-        <div className="dashboard-card vehicle-card">
-          <div className="card-header">
-            <FaCar className="card-icon" />
-            <h2>Vehicle Information</h2>
-          </div>
-          {ownerData && (
+        {/* Bottom row: Full-width activities */}
+        <div className="bottom-row">
+          <div className="dashboard-card history-card">
+            <div className="card-header">
+              <div className="card-icon history-icon">📋</div>
+              <h2>Recent Activities</h2>
+            </div>
             <div className="card-content">
-              <div className="info-row">
-                <span className="info-label">Vehicle Number</span>
-                <span className="info-value highlight">{ownerData.vehicleNumber}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Engine Number</span>
-                <span className="info-value">{ownerData.engineNumber}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Vehicle Type</span>
-                <span className="info-value">{ownerData.vehicleType || 'Standard'}</span>
-              </div>
-              <div className="qr-button-container">
-                <button className="qr-button" onClick={handleQRCodeClick}>
-                  <FaQrcode className="button-icon" /> Generate QR Code
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="dashboard-card quota-card">
-          <div className="card-header">
-            <div className="card-icon fuel-icon">⛽</div>
-            <h2>Fuel Quota Status</h2>
-          </div>
-          <div className="card-content">
-            <div className="fuel-quota-container">
-              <div className="fuel-gauge">
-                <div className="fuel-level" style={{ width: `${ownerData?.quotaPercentage || 75}%` }}></div>
-              </div>
-              <div className="quota-text">
-                <span>{ownerData?.quotaRemaining || 15} liters</span> remaining of <span>{ownerData?.quotaTotal || 20} liters</span>
-              </div>
-            </div>
-            <div className="last-refuel">
-              Last refuel: {ownerData?.lastRefuelDate || 'April 27, 2025'}
-            </div>
-          </div>
-        </div>
-
-        <div className="dashboard-card history-card">
-          <div className="card-header">
-            <div className="card-icon history-icon">📋</div>
-            <h2>Recent Activities</h2>
-          </div>
-          <div className="card-content">
-            <div className="activity-list">
-              <div className="activity-item">
-                <div className="activity-date">April 27, 2025</div>
-                <div className="activity-details">Refueled 12.5 liters at Shell Station</div>
-              </div>
-              <div className="activity-item">
-                <div className="activity-date">April 15, 2025</div>
-                <div className="activity-details">Quota updated to 20 liters</div>
-              </div>
-              <div className="activity-item">
-                <div className="activity-date">April 10, 2025</div>
-                <div className="activity-details">Refueled 7.5 liters at Caltex Station</div>
+              <div className="activity-list">
+                <div className="activity-item">
+                  <div className="activity-date">April 27, 2025</div>
+                  <div className="activity-details">Refueled 12.5 liters at Shell Station</div>
+                </div>
+                <div className="activity-item">
+                  <div className="activity-date">April 15, 2025</div>
+                  <div className="activity-details">Quota updated to 20 liters</div>
+                </div>
+                <div className="activity-item">
+                  <div className="activity-date">April 10, 2025</div>
+                  <div className="activity-details">Refueled 7.5 liters at Caltex Station</div>
+                </div>
               </div>
             </div>
           </div>

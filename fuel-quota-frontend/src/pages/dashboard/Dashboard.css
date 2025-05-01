@@ -55,9 +55,21 @@
 
 /* Dashboard Grid Layout */
 .dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
+}
+
+/* Top row with three equal columns */
+.top-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+/* Bottom row that spans full width */
+.bottom-row {
+  width: 100%;
 }
 
 /* Card Styles */
@@ -412,6 +424,16 @@
 }
 
 /* Responsive styles */
+@media (max-width: 1024px) {
+  .top-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .quota-card {
+    grid-column: span 2;
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
@@ -419,5 +441,13 @@
   
   .owner-dashboard {
     padding: 1rem;
+  }
+
+  .top-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .quota-card {
+    grid-column: auto;
   }
 }
