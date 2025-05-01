@@ -3,11 +3,16 @@
 
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import "./App.css";
+
 import UserLogin from "./pages/userLogin/UserLogin";
 import RegisterForm from "./pages/userVehicleregistration/VehicleRegistration";
-import "./App.css";
 import LandingPage from "./pages/landingpage/LandingPage";
 import AuthenticatedDashboard from "./pages/dashboard/Dashboard";
+
+import ShedOwnerRegister from "./pages/shedOwnerRegister/shedOwnerRegister";
+import ShedOwnerLogin from "./pages/shedOwnerLogin/shedOwnerLogin";
+
 function App() {
   return (
     <BrowserRouter>
@@ -15,6 +20,9 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/user-login" element={<UserLogin />} />
         <Route path="/user-register" element={<RegisterForm />} />
+        <Route path="/shed-owner-register" element={<ShedOwnerRegister />} />
+        <Route path="/shed-owner-login" element={<ShedOwnerLogin />} />
+
         <Route path="/user-dashboard" element={
             <AuthenticatedDashboard/>
         } />
