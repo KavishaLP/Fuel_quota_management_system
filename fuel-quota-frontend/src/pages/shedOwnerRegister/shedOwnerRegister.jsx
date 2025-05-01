@@ -13,7 +13,8 @@ import {
     faKey, 
     faStore, 
     faIdCard, 
-    faSignInAlt 
+    faSignInAlt,
+    faAddressCard
 } from '@fortawesome/free-solid-svg-icons';
 
 const ShedOwnerRegister = () => {
@@ -21,6 +22,7 @@ const ShedOwnerRegister = () => {
     const [formData, setFormData] = useState({
         station_registration_number: "",
         owner_name: "",
+        nic_number: "", // Added NIC number field
         contact_number: "",
         email: "",
         password: "",
@@ -55,6 +57,7 @@ const ShedOwnerRegister = () => {
         // Required fields
         if (!formData.station_registration_number) newErrors.station_registration_number = "Registration number is required";
         if (!formData.owner_name) newErrors.owner_name = "Owner name is required";
+        if (!formData.nic_number) newErrors.nic_number = "NIC number is required"; // NIC validation
         if (!formData.contact_number) newErrors.contact_number = "Contact number is required";
         if (!formData.email) newErrors.email = "Email address is required";
         if (!formData.password) newErrors.password = "Password is required";
@@ -63,6 +66,11 @@ const ShedOwnerRegister = () => {
         // Format validations
         if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             newErrors.email = "Please enter a valid email address";
+        }
+        
+        // NIC format validation (supports both old 9+V/X and new 12-digit formats)
+        if (formData.nic_number && !/^([0-9]{9}[vVxX]|[0-9]{12})$/.test(formData.nic_number)) {
+            newErrors.nic_number = "Please enter a valid NIC (e.g., 123456789V or 123456789012)";
         }
         
         if (formData.contact_number && !/^(?:\+94|0)[1-9][0-9]{8}$/.test(formData.contact_number)) {
@@ -92,9 +100,10 @@ const ShedOwnerRegister = () => {
         setIsSubmitting(true);
 
         try {
-            const response = await axios.post("http://localhost:5000/shedapi/shed-register", {
+            const response = await axios.post("http://localhost:5000/shedapi/shed-registers", {
                 stationRegistrationNumber: formData.station_registration_number,
                 ownerName: formData.owner_name,
+                nicNumber: formData.nic_number, // Added NIC to API request
                 contactNumber: formData.contact_number,
                 email: formData.email,
                 password: formData.password,
@@ -108,6 +117,7 @@ const ShedOwnerRegister = () => {
                 setFormData({
                     station_registration_number: "",
                     owner_name: "",
+                    nic_number: "", // Reset NIC field
                     contact_number: "",
                     email: "",
                     password: "",
@@ -169,6 +179,13 @@ const ShedOwnerRegister = () => {
             label: "Owner Name", 
             type: "text", 
             icon: faUser 
+        },
+        { 
+            name: "nic_number", // New NIC field
+            label: "NIC Number", 
+            type: "text", 
+            icon: faAddressCard,
+            placeholder: "123456789V or 123456789012" 
         },
         { 
             name: "contact_number", 
