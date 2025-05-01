@@ -15,7 +15,7 @@ const withAuth2 = (WrappedComponent) => {
 
     useEffect(() => {
       const verifyToken = async () => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('shedToken');
         
         // Immediate checks
         if (!token) {
