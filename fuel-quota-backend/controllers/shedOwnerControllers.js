@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
+import jwt from 'jsonwebtoken';
 import { vehicleDB, motorTrafficDB } from "../config/sqldb.js";
 
 export const registerFuelStation = async (req, res) => {
@@ -259,6 +259,103 @@ export const registerFuelStation = async (req, res) => {
         });
     } catch (error) {
         console.error("Unexpected error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "An unexpected error occurred",
+            errorType: "SERVER_ERROR"
+        });
+    }
+};
+
+export const loginFuelStation = async (req, res) => {
+    console.log("Fuel station login request received:", req.body);
+    const { stationRegistrationNumber, password } = req.body;
+
+    // Validate required fields
+    if (!stationRegistrationNumber || !password) {
+        console.log("Missing fields:", { stationRegistrationNumber, password });
+        return res.status(400).json({
+            success: false,
+            message: "Station registration number and password are required",
+            errorType: "VALIDATION_ERROR",
+            errors: {
+                stationRegistrationNumber: !stationRegistrationNumber ? "Registration number is required" : null,
+                password: !password ? "Password is required" : null
+            }
+        });
+    }
+
+    try {
+        // Check if station with the provided registration number exists
+        const query = "SELECT * FROM fuel_stations WHERE station_registration_number = ?";
+        vehicleDB.query(query, [stationRegistrationNumber], async (err, results) => {
+            if (err) {
+                console.error("Database error during login:", err);
+                return res.status(500).json({
+                    success: false,
+                    message: "Internal server error",
+                    errorType: "DATABASE_ERROR"
+                });
+            }
+
+            if (results.length === 0) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid registration number or password",
+                    errorType: "AUTHENTICATION_ERROR"
+                });
+            }
+
+            const station = results[0];
+            
+            // Compare passwords
+            const isPasswordValid = await bcrypt.compare(password, station.password);
+            
+            if (!isPasswordValid) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid registration number or password",
+                    errorType: "AUTHENTICATION_ERROR"
+                });
+            }
+
+            // Generate JWT token
+            const token = jwt.sign(
+                { 
+                    userId: station.id,
+                    stationRegistrationNumber: station.station_registration_number,
+                    userType: 'fuel_station'  // Added to distinguish from regular users
+                },
+                process.env.JWT_SECRET || 'fallback_secret_key_not_for_production',
+                { expiresIn: '24h' }
+            );
+            console.log("Generated token for station:", token);
+
+            // Return station data (excluding password)
+            const stationData = {
+                id: station.id,
+                full_name: station.full_name,
+                nic: station.nic,
+                fuel_station_name: station.fuel_station_name,
+                station_registration_number: station.station_registration_number,
+                location: station.location,
+                registered_date: station.registered_date,
+                contact_number1: station.contact_number1,
+                contact_number2: station.contact_number2,
+                email1: station.email1,
+                email2: station.email2
+            };
+
+            return res.status(200).json({
+                success: true,
+                message: "Login successful",
+                token,
+                shedOwnerId: station.id,  // Matches your frontend expectation
+                station: stationData     // Additional station details
+            });
+        });
+    } catch (error) {
+        console.error("Fuel station login error:", error);
         return res.status(500).json({
             success: false,
             message: "An unexpected error occurred",
