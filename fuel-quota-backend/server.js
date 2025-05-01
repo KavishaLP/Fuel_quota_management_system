@@ -3,6 +3,7 @@
 
 import express from "express";
 import bodyParser from "body-parser";
+import cron from 'node-cron';
 import cors from "cors";
 import cookieParser from 'cookie-parser';
 import userRoutes from "./routes/userRoutes.js";
@@ -10,13 +11,14 @@ import userMainRoutes from "./routes/userMainRoutes.js";
 import shedOwnerRoutes from "./routes/shedOwnerRoutes.js";
 import shedOwnerMainRoutes from "./routes/shedOwnerMainRoutes.js";
 import {validateToken} from "./middleware/authMiddleware.js";
+import { resetWeeklyQuotas } from "./utils/resetQuotas.js";
+import {manualReset} from "./utils/resetQuotas.js"; // Import the manual reset function
 
-import { initQuotaResetScheduler } from './utils/resetQuotas.js';
 
 const app = express();
 
-// Initialize the scheduler (will run automatically every Monday at 00:00)
-initQuotaResetScheduler();
+// Initialize during server startup
+setupQuotaResetCron();
 
 const port = 5000;
 
@@ -29,7 +31,6 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
-
 app.use(cors(corsOptions));
 
 // Middleware to parse JSON bodies
@@ -42,15 +43,29 @@ app.use("/userapi", userMainRoutes);
 app.use("/shedapi", shedOwnerRoutes);
 app.use("/shedownerapi", shedOwnerMainRoutes);
 
-// Create a temporary test route in server.js
-app.get('/test-quota-reset', async (req, res) => {
-  try {
-    await resetWeeklyQuotas(); // Manually trigger the function
-    console.log('doneeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')
-  } catch (error) {
-    res.status(500).send("Test failed: " + error.message);
-  }
-});
+app.get("/reset-test", manualReset);  // Manual reset endpoint for testing
+
+function setupQuotaResetCron() {
+  // Runs at 00:01 AM every Monday (1 minute past midnight)
+  cron.schedule('1 0 * * 1', () => {
+    console.log('Running weekly quota reset for ALL records...');
+    
+    resetWeeklyQuotas((result) => {
+      console.log('Quota reset result:', result);
+      
+      // Add notification logic if needed
+      if (!result.success) {
+        // Send alert to admin
+        console.error('Quota reset failed:', result.message);
+      }
+    });
+  }, {
+    scheduled: true,
+    timezone: "Asia/Colombo" // Set your appropriate timezone
+  });
+
+  console.log('Weekly quota reset cron job scheduled (Mondays at 00:01)');
+}
 
 // Token verification endpoint
 app.get('/api/verify-token', validateToken, (req, res) => {
