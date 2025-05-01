@@ -11,7 +11,13 @@ import shedOwnerRoutes from "./routes/shedOwnerRoutes.js";
 import shedOwnerMainRoutes from "./routes/shedOwnerMainRoutes.js";
 import {validateToken} from "./middleware/authMiddleware.js";
 
+import { initQuotaResetScheduler } from './utils/resetQuotas.js';
+
 const app = express();
+
+// Initialize the scheduler (will run automatically every Monday at 00:00)
+initQuotaResetScheduler();
+
 const port = 5000;
 
 app.use(express.json());
@@ -35,6 +41,16 @@ app.use("/userapi", userMainRoutes);
 
 app.use("/shedapi", shedOwnerRoutes);
 app.use("/shedownerapi", shedOwnerMainRoutes);
+
+// Create a temporary test route in server.js
+app.get('/test-quota-reset', async (req, res) => {
+  try {
+    await resetWeeklyQuotas(); // Manually trigger the function
+    console.log('doneeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')
+  } catch (error) {
+    res.status(500).send("Test failed: " + error.message);
+  }
+});
 
 // Token verification endpoint
 app.get('/api/verify-token', validateToken, (req, res) => {

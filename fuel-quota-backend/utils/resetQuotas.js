@@ -2,7 +2,9 @@
 import { vehicleDB } from '../config/sqldb.js';
 import cron from 'node-cron';
 
-
+/**
+ * Updates ALL fuel quotas to their maximum values and sets new week dates
+ */
 const resetWeeklyQuotas = async () => {
   try {
     // Calculate current week (Monday to Sunday)
@@ -42,7 +44,9 @@ const resetWeeklyQuotas = async () => {
   }
 };
 
-
+/**
+ * Initializes the weekly quota reset scheduler
+ */
 export const initQuotaResetScheduler = () => {
   // Schedule to run every Monday at 00:00 AM (Colombo time)
   const job = cron.schedule('0 0 * * 1', resetWeeklyQuotas, {
