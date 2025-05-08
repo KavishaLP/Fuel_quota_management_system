@@ -1,20 +1,41 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import RegisterForm from "./pages/userVehicleregistration/VehicleRegistration";
+//npm install @fortawesome/react-fontawesome @fortawesome/free-solid-svg-icons
+//npm install @fortawesome/react-fontawesome @fortawesome/free-solid-svg-icons
+
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import "./App.css";
+
 import UserLogin from "./pages/userLogin/UserLogin";
-import Dashboard from "./pages/dashboard/Dashboard";
+import RegisterForm from "./pages/userVehicleregistration/VehicleRegistration";
+import LandingPage from "./pages/landingpage/LandingPage";
+import AuthenticatedDashboard from "./pages/dashboard/Dashboard";
+
+import ShedOwnerRegister from "./pages/shedOwnerRegister/shedOwnerRegister";
+import ShedOwnerLogin from "./pages/shedOwnerLogin/shedOwnerLogin";
+import AuthenticatedshedOwnerDashboard from "./pages/shedOwnerDashboard/shedOwnerDashboard";
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        {/* Redirect the root path to /register */}
-        <Route path="/" element={<Navigate to="/user-register" replace />} />
-        <Route path="/user-register" element={<RegisterForm />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/user-login" element={<UserLogin />} />
-       
-        <Route path="/user-dashboard" element={<Dashboard />} />
+        <Route path="/user-register" element={<RegisterForm />} />
+        <Route path="/shed-owner-register" element={<ShedOwnerRegister />} />
+        <Route path="/shed-owner-login" element={<ShedOwnerLogin />} />
+
+
+        <Route path="/user-dashboard" element={
+            <AuthenticatedDashboard/>
+        } />
+
+
+        <Route path="/shed-owner-dashboard" element={
+            <AuthenticatedshedOwnerDashboard/>
+        } />        
+        
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
 

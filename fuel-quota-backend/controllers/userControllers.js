@@ -71,12 +71,13 @@ export const registerVehicle = async (req, res) => {
 
     // Validate vehicle number format (Sri Lankan format)
     if (!/^[A-Z]{2,3}-\d{4}$/.test(vehicleNumber)) {
+        console.log("Invalid Vehicle Number format:", vehicleNumber);
         return res.status(400).json({
             success: false,
-            message: "Invalid vehicle number",
+            message: "Invalid Vehicle Number format",
             errorType: "VALIDATION_ERROR",
             errors: {
-                vehicleNumber: "Format: ABC-1234 (uppercase letters)"
+                vehicleNumber: "Format: ABC-1234 (uppercase)"
             }
         });
     }
@@ -94,7 +95,7 @@ export const registerVehicle = async (req, res) => {
     }
 
     try {
-        // Step 1: Verify vehicle exists in motor traffic database with matching details
+        // Step 1: Verify vehicle exists in motor traffic database
         const motorTrafficCheckQuery = `
             SELECT * FROM registered_vehicles 
             WHERE vehicleNumber = ? 
@@ -158,14 +159,13 @@ export const registerVehicle = async (req, res) => {
                 return;
             }
 
-            // Step 2: Check if already registered in our system
+            // Step 2: Check if vehicle is already registered in our system
             const existingCheckQuery = `
                 SELECT * FROM vehicleowner 
-                WHERE vehicleNumber = ? 
-                OR (NIC = ? AND vehicleNumber != ?)
+                WHERE vehicleNumber = ?
             `;
             
-            vehicleDB.query(existingCheckQuery, [vehicleNumber, NIC, vehicleNumber], 
+            vehicleDB.query(existingCheckQuery, [vehicleNumber], 
             async (existingErr, existingResults) => {
                 if (existingErr) {
                     console.error("Vehicle DB error:", existingErr);
@@ -178,86 +178,182 @@ export const registerVehicle = async (req, res) => {
 
                 if (existingResults.length > 0) {
                     const errors = {};
-                    const nicExists = existingResults.some(r => r.NIC === NIC && r.vehicleNumber !== vehicleNumber);
-                    const vehicleExists = existingResults.some(r => r.vehicleNumber === vehicleNumber);
+                    errors.vehicleNumber = "This vehicle is already registered";
                     
-                    if (nicExists) {
-                        errors.NIC = "This NIC is already registered with another vehicle";
-                    }
-                    if (vehicleExists) {
-                        errors.vehicleNumber = "This vehicle is already registered";
-                        // Check if it's registered by the same owner
-                        const sameOwner = existingResults.some(r => 
-                            r.vehicleNumber === vehicleNumber && r.NIC === NIC
-                        );
-                        if (sameOwner) {
-                            errors.general = "You have already registered this vehicle";
-                        }
+                    const sameOwner = existingResults.some(r => 
+                        r.vehicleNumber === vehicleNumber && r.NIC === NIC
+                    );
+                    
+                    if (sameOwner) {
+                        errors.general = "You have already registered this vehicle";
+                    } else {
+                        errors.general = "This vehicle is registered by another user";
                     }
 
                     return res.status(409).json({
                         success: false,
-                        message: "Duplicate registration detected",
+                        message: "Vehicle already registered",
                         errorType: "DUPLICATE_REGISTRATION",
                         errors
                     });
                 }
 
                 try {
-                    // Step 3: Proceed with registration
-                    const uniqueToken = crypto.randomBytes(32).toString('hex');
-                    const hashedPassword = await bcrypt.hash(password, 12);
-                    
-                    const registrationQuery = `
-                        INSERT INTO vehicleowner (
-                            firstName, lastName, NIC, vehicleType,
-                            vehicleNumber, engineNumber, password, uniqueToken
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    // Step 3: Get vehicle type details for quota
+                    const vehicleTypeQuery = `
+                        SELECT weekly_quota FROM vehicle_types 
+                        WHERE id = ?
                     `;
                     
-                    vehicleDB.query(registrationQuery, [
-                        firstName, lastName, NIC, vehicleType,
-                        vehicleNumber, engineNumber, hashedPassword, uniqueToken
-                    ], (registrationErr, registrationResult) => {
-                        if (registrationErr) {
-                            console.error("Registration error:", registrationErr);
-                            return res.status(500).json({
+                    vehicleDB.query(vehicleTypeQuery, [vehicleType], 
+                    async (typeErr, typeResults) => {
+                        if (typeErr || typeResults.length === 0) {
+                            console.error("Vehicle type error:", typeErr);
+                            return res.status(400).json({
                                 success: false,
-                                message: "Registration processing error",
-                                errorType: "REGISTRATION_ERROR"
+                                message: "Invalid vehicle type specified",
+                                errorType: "VALIDATION_ERROR",
+                                errors: {
+                                    vehicleType: "Please select a valid vehicle type"
+                                }
                             });
                         }
 
-                        // Success response
-                        return res.status(201).json({
-                            success: true,
-                            message: "Vehicle registered successfully",
-                            data: {
-                                registrationId: registrationResult.insertId,
-                                owner: `${firstName} ${lastName}`,
-                                vehicleDetails: {
-                                    number: vehicleNumber,
-                                    type: vehicleType,
-                                    engineNumber,
-                                    make: motorTrafficResults[0].make,
-                                    model: motorTrafficResults[0].model,
-                                    year: motorTrafficResults[0].year
-                                },
-                                token: uniqueToken
-                            },
-                            nextSteps: [
-                                "Save your registration details",
-                                "Use your token to generate QR code",
-                                "Login to access your fuel quota"
-                            ]
+                        const weeklyQuota = typeResults[0].weekly_quota;
+                        const uniqueToken = crypto.randomBytes(32).toString('hex');
+                        const hashedPassword = await bcrypt.hash(password, 12);
+                        const vehicleTypeId = parseInt(vehicleType, 10);
+
+                        if (isNaN(vehicleTypeId)) {
+                            return res.status(400).json({
+                                success: false,
+                                message: "Invalid vehicle type",
+                                errorType: "VALIDATION_ERROR",
+                                errors: {
+                                    vehicleType: "Please select a valid vehicle type"
+                                }
+                            });
+                        }
+
+                        // Start transaction for atomic operations
+                        vehicleDB.beginTransaction(async (transactionErr) => {
+                            if (transactionErr) {
+                                console.error("Transaction error:", transactionErr);
+                                return res.status(500).json({
+                                    success: false,
+                                    message: "Transaction initialization failed",
+                                    errorType: "DATABASE_ERROR"
+                                });
+                            }
+
+                            try {
+                                // Step 4: Register vehicle owner
+                                const registrationQuery = `
+                                    INSERT INTO vehicleowner (
+                                        firstName, lastName, NIC, vehicleType,
+                                        vehicleNumber, engineNumber, password, uniqueToken
+                                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                `;
+                                
+                                vehicleDB.query(registrationQuery, [
+                                    firstName, lastName, NIC, vehicleTypeId,
+                                    vehicleNumber, engineNumber, hashedPassword, uniqueToken
+                                ], async (registrationErr, registrationResult) => {
+                                    if (registrationErr) {
+                                        return vehicleDB.rollback(() => {
+                                            console.error("Registration error:", registrationErr);
+                                            res.status(500).json({
+                                                success: false,
+                                                message: "Registration processing error",
+                                                errorType: "REGISTRATION_ERROR"
+                                            });
+                                        });
+                                    }
+
+                                    const ownerId = registrationResult.insertId;
+                                    const currentDate = new Date();
+                                    const weekStart = new Date(currentDate.setDate(currentDate.getDate() - currentDate.getDay()));
+                                    const weekEnd = new Date(weekStart);
+                                    weekEnd.setDate(weekStart.getDate() + 6);
+
+                                    // Step 5: Initialize fuel quota
+                                    const quotaQuery = `
+                                        INSERT INTO fuel_quotas (
+                                            vehicle_owner_id, vehicle_type_id, 
+                                            remaining_quota, week_start_date, week_end_date
+                                        ) VALUES (?, ?, ?, ?, ?)
+                                    `;
+                                    
+                                    vehicleDB.query(quotaQuery, [
+                                        ownerId, vehicleTypeId,
+                                        weeklyQuota, 
+                                        weekStart.toISOString().split('T')[0], 
+                                        weekEnd.toISOString().split('T')[0]
+                                    ], (quotaErr) => {
+                                        if (quotaErr) {
+                                            return vehicleDB.rollback(() => {
+                                                console.error("Quota initialization error:", quotaErr);
+                                                res.status(500).json({
+                                                    success: false,
+                                                    message: "Fuel quota initialization failed",
+                                                    errorType: "QUOTA_ERROR"
+                                                });
+                                            });
+                                        }
+
+                                        // Commit transaction if all succeeds
+                                        vehicleDB.commit((commitErr) => {
+                                            if (commitErr) {
+                                                return vehicleDB.rollback(() => {
+                                                    console.error("Commit error:", commitErr);
+                                                    res.status(500).json({
+                                                        success: false,
+                                                        message: "Transaction commit failed",
+                                                        errorType: "DATABASE_ERROR"
+                                                    });
+                                                });
+                                            }
+
+                                            // Success response
+                                            return res.status(201).json({
+                                                success: true,
+                                                message: "Vehicle registered successfully with fuel quota",
+                                                data: {
+                                                    registrationId: ownerId,
+                                                    owner: `${firstName} ${lastName}`,
+                                                    vehicleDetails: {
+                                                        number: vehicleNumber,
+                                                        type: vehicleType,
+                                                        engineNumber,
+                                                        make: motorTrafficResults[0].make,
+                                                        model: motorTrafficResults[0].model,
+                                                        year: motorTrafficResults[0].year,
+                                                        weeklyQuota: weeklyQuota
+                                                    },
+                                                    token: uniqueToken
+                                                }
+                                            });
+                                        });
+                                    });
+                                });
+                            } catch (processingError) {
+                                vehicleDB.rollback(() => {
+                                    console.error("Processing error:", processingError);
+                                    res.status(500).json({
+                                        success: false,
+                                        message: "Registration processing failed",
+                                        errorType: "PROCESSING_ERROR"
+                                    });
+                                });
+                            }
                         });
                     });
-                } catch (processingError) {
-                    console.error("Processing error:", processingError);
+                } catch (error) {
+                    console.error("Unexpected error:", error);
                     return res.status(500).json({
                         success: false,
-                        message: "Registration processing failed",
-                        errorType: "PROCESSING_ERROR"
+                        message: "An unexpected error occurred",
+                        errorType: "SERVER_ERROR"
                     });
                 }
             });
@@ -274,133 +370,112 @@ export const registerVehicle = async (req, res) => {
 
 export const loginUser = async (req, res) => {
     console.log("Login request received:", req.body);
-    const { NIC, password } = req.body;
+    const { vehicleNumber, password } = req.body;
 
     // Validate required fields
-    if (!NIC || !password) {
-        console.log("Missing fields:", { NIC, password });
+    if (!vehicleNumber || !password) {
+        console.log("Missing fields:", { vehicleNumber, password });
         return res.status(400).json({
             success: false,
-            message: "NIC and password are required",
+            message: "Vehicle Number and password are required",
             errorType: "VALIDATION_ERROR",
             errors: {
-                NIC: !NIC ? "NIC is required" : null,
+                vehicleNumber: !vehicleNumber ? "Vehicle Number is required" : null,
                 password: !password ? "Password is required" : null
             }
         });
     }
 
-    // Validate NIC format
-    if (!/^([0-9]{9}[vVxX]|[0-9]{12})$/.test(NIC)) {
-        console.log("Invalid NIC format:", NIC);
-        return res.status(400).json({
-            success: false,
-            message: "Invalid NIC format",
-            errorType: "VALIDATION_ERROR",
-            errors: {
-                NIC: "Valid formats: 123456789V or 123456789012"
-            }
-        });
-    }
-
     try {
-        console.log("Checking user in database...");
-        const userQuery = "SELECT * FROM vehicleowner WHERE NIC = ?";
-        
-        vehicleDB.query(userQuery, [NIC], async (err, results) => {
+        // Check if user with the provided vehicle number exists
+        const query = "SELECT * FROM vehicleowner WHERE vehicleNumber = ?";
+        vehicleDB.query(query, [vehicleNumber], async (err, results) => {
             if (err) {
-                console.error("Database error:", err);
+                console.error("Database error during login:", err);
                 return res.status(500).json({
                     success: false,
-                    message: "Database error during login",
+                    message: "Internal server error",
                     errorType: "DATABASE_ERROR"
                 });
             }
 
-            console.log("Database results:", results);
-            
             if (results.length === 0) {
-                console.log("No user found with NIC:", NIC);
                 return res.status(401).json({
                     success: false,
-                    message: "Invalid credentials",
-                    errorType: "AUTH_ERROR",
-                    errors: {
-                        NIC: "No account found with this NIC"
-                    }
+                    message: "Invalid vehicle number or password",
+                    errorType: "AUTHENTICATION_ERROR"
                 });
             }
 
             const user = results[0];
-            console.log("User found:", user.id);
-
-            // Verify password
-            console.log("Comparing passwords...");
+            
+            // Compare passwords
             const isPasswordValid = await bcrypt.compare(password, user.password);
             
             if (!isPasswordValid) {
-                console.log("Password comparison failed");
                 return res.status(401).json({
                     success: false,
-                    message: "Invalid credentials",
-                    errorType: "AUTH_ERROR",
-                    errors: {
-                        password: "Incorrect password"
-                    }
+                    message: "Invalid vehicle number or password",
+                    errorType: "AUTHENTICATION_ERROR"
                 });
             }
 
-            console.log("Password verified, generating token...");
-            // Create JWT token
+            // Generate JWT token
             const token = jwt.sign(
-                {
-                    userId: user.id,
-                    NIC: user.NIC,
-                    vehicleNumber: user.vehicleNumber
-                },
-                process.env.JWT_SECRET,
-                { expiresIn: '1h' }
+                { userId: user.id, vehicleNumber: user.vehicleNumber },
+                process.env.JWT_SECRET || 'fallback_secret_key_not_for_production',
+                { expiresIn: '24h' }
             );
+            console.log("Generated token:", token);
 
-            console.log("Token generated, fetching vehicle details...");
-            // Get vehicle details
-            const vehicleQuery = "SELECT make, model, year FROM registered_vehicles WHERE vehicleNumber = ? LIMIT 1";
-            
-            motorTrafficDB.query(vehicleQuery, [user.vehicleNumber], (vehicleErr, vehicleResults) => {
-                const vehicleDetails = vehicleResults && vehicleResults[0] ? vehicleResults[0] : {};
-                
-                console.log("Sending success response");
-                return res.status(200).json({
-                    success: true,
-                    message: "Login successful",
-                    token,
-                    user: {
-                        id: user.id,
-                        firstName: user.firstName,
-                        lastName: user.lastName,
-                        NIC: user.NIC,
-                        vehicleNumber: user.vehicleNumber,
-                        vehicleType: user.vehicleType,
-                        engineNumber: user.engineNumber,
-                        vehicleDetails: {
-                            make: vehicleDetails.make || 'Unknown',
-                            model: vehicleDetails.model || 'Unknown',
-                            year: vehicleDetails.year || 'Unknown'
-                        }
-                    },
-                    nextSteps: [
-                        "Use your token to authenticate requests",
-                        "Token expires in 1 hour"
-                    ]
-                });
+            // Return user data (excluding password)
+            const userData = { ...user };
+            delete userData.password;
+
+            return res.status(200).json({
+                success: true,
+                message: "Login successful",
+                token,
+                user: userData
             });
         });
     } catch (error) {
-        console.error("Unexpected error in login:", error);
+        console.error("Login error:", error);
         return res.status(500).json({
             success: false,
-            message: "An unexpected error occurred during login",
+            message: "An unexpected error occurred",
             errorType: "SERVER_ERROR"
         });
     }
 };
+
+export const getVehicleTypes = async (req, res) => {
+    try {
+        const query = "SELECT id, type_name FROM vehicle_types";
+        vehicleDB.query(query, (err, results) => {
+            if (err) {
+                console.error("Error fetching vehicle types:", err);
+                return res.status(500).json({
+                    success: false,
+                    message: "Database error when fetching vehicle types",
+                    errorType: "DATABASE_ERROR"
+                });
+            }
+            
+            return res.status(200).json({
+                success: true,
+                message: "Vehicle types retrieved successfully",
+                data: results
+            });
+        });
+    } catch (error) {
+        console.error("Unexpected error fetching vehicle types:", error);
+        return res.status(500).json({
+            success: false,
+            message: "An unexpected error occurred",
+            errorType: "SERVER_ERROR"
+        });
+    }
+};
+
+

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 26, 2025 at 02:13 PM
+-- Generation Time: May 08, 2025 at 08:54 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -20,6 +20,35 @@ SET time_zone = "+00:00";
 --
 -- Database: `motortrafficdepdb`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `fuel_sheds`
+--
+
+CREATE TABLE `fuel_sheds` (
+  `id` int(11) NOT NULL,
+  `owner_name` varchar(100) NOT NULL,
+  `nic` varchar(12) NOT NULL,
+  `fuel_station_name` varchar(100) NOT NULL,
+  `station_registration_number` varchar(50) NOT NULL,
+  `contact_number` varchar(15) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `location` varchar(200) NOT NULL,
+  `registered_date` date NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `fuel_sheds`
+--
+
+INSERT INTO `fuel_sheds` (`id`, `owner_name`, `nic`, `fuel_station_name`, `station_registration_number`, `contact_number`, `email`, `location`, `registered_date`) VALUES
+(1, 'Ruwan Jayasuriya', '198523456789', 'City Fuel Centre - Colombo', 'FSREG001', '0771234567', 'ruwan.jaya@cityfuel.lk', 'Colombo 07, Western Province', '2021-05-12'),
+(2, 'Anura Wijesinghe', '197812345678', 'Green Lanka Filling Station', 'FSREG002', '0719876543', 'anura@greenlanka.lk', 'Gampaha, Western Province', '2020-10-25'),
+(3, 'Nirosha Perera', '198945672345', 'Kandy Fuel Mart', 'FSREG003', '0784561230', 'nirosha@kandyfuel.lk', 'Kandy, Central Province', '2022-01-08'),
+(4, 'Sanjeewa Senanayake', '196734567890', 'Southern Energy Fuel Station', 'FSREG004', '0767894321', 'sanjeewa@southernfuel.lk', 'Matara, Southern Province', '2019-12-14'),
+(5, 'Thilina Abeywickrama', '199034567321', 'North Lanka Fuel Depot', 'FSREG005', '0756547890', 'thilina@northlanka.lk', 'Jaffna, Northern Province', '2021-09-30');
 
 -- --------------------------------------------------------
 
@@ -56,6 +85,14 @@ INSERT INTO `registered_vehicles` (`id`, `vehicleNumber`, `engineNumber`, `make`
 --
 
 --
+-- Indexes for table `fuel_sheds`
+--
+ALTER TABLE `fuel_sheds`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `nic` (`nic`),
+  ADD UNIQUE KEY `station_registration_number` (`station_registration_number`);
+
+--
 -- Indexes for table `registered_vehicles`
 --
 ALTER TABLE `registered_vehicles`
@@ -66,6 +103,12 @@ ALTER TABLE `registered_vehicles`
 --
 -- AUTO_INCREMENT for dumped tables
 --
+
+--
+-- AUTO_INCREMENT for table `fuel_sheds`
+--
+ALTER TABLE `fuel_sheds`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `registered_vehicles`

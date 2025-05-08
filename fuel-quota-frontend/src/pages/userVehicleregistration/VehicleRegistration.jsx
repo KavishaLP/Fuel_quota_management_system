@@ -1,10 +1,15 @@
-import React, { useState } from "react";
-import axios from "axios";
-import "./VehicleRegistration.css";
-import {Toast} from '../Toast' 
+/* eslint-disable no-unused-vars */
 
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import "./VehicleRegistration.css";
+import { Toast } from '../Toast';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser, faIdCard, faCar, faKey, faCarSide, faFingerprint, faSignInAlt } from '@fortawesome/free-solid-svg-icons';
 
 const RegisterForm = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
@@ -19,6 +24,30 @@ const RegisterForm = () => {
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toasts, setToasts] = useState([]);
+    const [vehicleTypes, setVehicleTypes] = useState([]);
+    const [isLoadingTypes, setIsLoadingTypes] = useState(true);
+
+    useEffect(() => {
+        // Fetch vehicle types from backend
+        const fetchVehicleTypes = async () => {
+            try {
+                const response = await axios.get("http://localhost:5000/api/vehicle-types");
+                if (response.data && response.data.success) {
+                    setVehicleTypes(response.data.data);
+                } else {
+                    console.error("Failed to load vehicle types:", response.data);
+                    addToast("Failed to load vehicle types", "error");
+                }
+            } catch (error) {
+                console.error("Error fetching vehicle types:", error);
+                addToast("Error loading vehicle types. Please refresh the page.", "error");
+            } finally {
+                setIsLoadingTypes(false);
+            }
+        };
+
+        fetchVehicleTypes();
+    }, []);
 
     const addToast = (message, type = "info") => {
         const id = Date.now() + Math.random().toString(36).substr(2, 9);
@@ -31,7 +60,10 @@ const RegisterForm = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        // Auto-capitalize vehicle number for better UX
+        const processedValue = name === "vehicleNumber" ? value.toUpperCase() : value;
+        
+        setFormData(prev => ({ ...prev, [name]: processedValue }));
         
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: null }));
@@ -96,21 +128,10 @@ const RegisterForm = () => {
 
             console.log("Registration response:", response.data);
 
+            // Handle successful response
             if (response.data && response.data.success) {
-                // Clear any existing errors
+                // Clear form data and errors
                 setErrors({});
-                
-                // Show success message
-                addToast(response.data.message || "Vehicle registered successfully", "success");
-                
-                // Show info messages for next steps if they exist
-                if (response.data.nextSteps && Array.isArray(response.data.nextSteps)) {
-                    response.data.nextSteps.forEach(step => {
-                        addToast(step, "info");
-                    });
-                }
-
-                // Reset form
                 setFormData({
                     firstName: "",
                     lastName: "",
@@ -121,23 +142,28 @@ const RegisterForm = () => {
                     password: "",
                     rePassword: ""
                 });
-
-                // Store token if available
-                if (response.data.data?.token) {
-                    localStorage.setItem('authToken', response.data.data.token);
-                } else if (response.data.uniqueToken) {
-                    localStorage.setItem('authToken', response.data.uniqueToken);
-                }
+                
+                // Show success message
+                addToast("Vehicle registered successfully! Redirecting to login...", "success");
+                
+                // Use window.location for reliable navigation if React Router is problematic
+                setTimeout(() => {
+                    window.location.href = '/user-login';
+                }, 2500);
+                
+                return; // Exit early to avoid further processing
             } else {
+                // Handle unexpected success format
                 addToast(response.data?.message || "Registration failed", "error");
             }
-
         } catch (error) {
             console.error("Registration error:", error);
             
+            // Handle API error responses
             if (error.response) {
                 const apiError = error.response.data;
                 
+                // Handle validation errors
                 if (apiError?.errors) {
                     setErrors(apiError.errors);
                     
@@ -149,17 +175,39 @@ const RegisterForm = () => {
                         addToast(apiError.errors.general, "error");
                     }
                 } else if (apiError?.message) {
+                    // Handle general error message
                     addToast(apiError.message, "error");
                 }
             } else if (error.request) {
+                // Handle no response from server
                 addToast("No response from server. Please try again.", "error");
             } else {
+                // Handle unexpected errors
                 addToast("Registration failed. Please try again.", "error");
             }
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    // Form field configuration
+    const formFields = [
+        { name: "firstName", label: "First Name", type: "text", icon: faUser },
+        { name: "lastName", label: "Last Name", type: "text", icon: faUser },
+        { name: "NIC", label: "NIC Number", type: "text", placeholder: "123456789V or 123456789012", icon: faIdCard },
+        { 
+            name: "vehicleType", 
+            label: "Vehicle Type", 
+            type: "select",
+            options: vehicleTypes,
+            isLoading: isLoadingTypes,
+            icon: faCar
+        },
+        { name: "vehicleNumber", label: "Vehicle Number", type: "text", placeholder: "ABC-1234", icon: faCarSide },
+        { name: "engineNumber", label: "Engine Number", type: "text", icon: faFingerprint },
+        { name: "password", label: "Password", type: "password", icon: faKey },
+        { name: "rePassword", label: "Confirm Password", type: "password", icon: faKey }
+    ];
 
     return (
         <div className="registration-container">
@@ -176,24 +224,13 @@ const RegisterForm = () => {
 
             <h2>Vehicle Registration</h2>
 
-            <form onSubmit={handleSubmit} noValidate>
-                {[
-                    { name: "firstName", label: "First Name", type: "text" },
-                    { name: "lastName", label: "Last Name", type: "text" },
-                    { name: "NIC", label: "NIC Number", type: "text", placeholder: "123456789V or 123456789012" },
-                    { 
-                        name: "vehicleType", 
-                        label: "Vehicle Type", 
-                        type: "select",
-                        options: ["", "Car", "Motorcycle", "Van", "Bus", "Lorry", "Other"]
-                    },
-                    { name: "vehicleNumber", label: "Vehicle Number", type: "text", placeholder: "ABC-1234" },
-                    { name: "engineNumber", label: "Engine Number", type: "text" },
-                    { name: "password", label: "Password", type: "password" },
-                    { name: "rePassword", label: "Confirm Password", type: "password" }
-                ].map(field => (
+            <form onSubmit={handleSubmit} className="registration-form" noValidate>
+                {formFields.map(field => (
                     <div key={field.name} className={`form-group ${errors[field.name] ? "has-error" : ""}`}>
-                        <label htmlFor={field.name}>{field.label}</label>
+                        <label htmlFor={field.name}>
+                            <FontAwesomeIcon icon={field.icon} />
+                            {field.label}
+                        </label>
                         
                         {field.type === "select" ? (
                             <select
@@ -202,10 +239,12 @@ const RegisterForm = () => {
                                 value={formData[field.name]}
                                 onChange={handleChange}
                                 required
+                                disabled={field.isLoading}
                             >
+                                <option value="">Select {field.label.toLowerCase()}</option>
                                 {field.options.map(option => (
-                                    <option key={option} value={option}>
-                                        {option || `Select ${field.label.toLowerCase()}`}
+                                    <option key={option.id} value={option.id}>
+                                        {option.type_name}
                                     </option>
                                 ))}
                             </select>
@@ -235,7 +274,7 @@ const RegisterForm = () => {
 
                 <button 
                     type="submit" 
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isLoadingTypes}
                     className="submit-btn"
                 >
                     {isSubmitting ? (
@@ -243,8 +282,22 @@ const RegisterForm = () => {
                             <span className="spinner" aria-hidden="true"></span>
                             Processing...
                         </>
-                    ) : "Register Vehicle"}
+                    ) : (
+                        <>
+                            <FontAwesomeIcon icon={faCar} />
+                            Register Vehicle
+                        </>
+                    )}
                 </button>
+
+                <div className="form-footer">
+                    <p>
+                        Already have an account? 
+                        <a href="/user-login">
+                            <FontAwesomeIcon icon={faSignInAlt} /> Login here
+                        </a>
+                    </p>
+                </div>
             </form>
         </div>
     );
