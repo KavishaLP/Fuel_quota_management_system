@@ -13,7 +13,7 @@ import AuthenticatedDashboard from "./pages/dashboard/Dashboard";
 import ShedOwnerRegister from "./pages/shedOwnerRegister/shedOwnerRegister";
 import ShedOwnerLogin from "./pages/shedOwnerLogin/shedOwnerLogin";
 import AuthenticatedshedOwnerDashboard from "./pages/shedOwnerDashboard/shedOwnerDashboard";
-
+//add npm
 function App() {
   return (
     <BrowserRouter>
@@ -23,7 +23,7 @@ function App() {
         <Route path="/user-register" element={<RegisterForm />} />
         <Route path="/shed-owner-register" element={<ShedOwnerRegister />} />
         <Route path="/shed-owner-login" element={<ShedOwnerLogin />} />
-
+        <Route path="/user-vehicle-registration" element={<RegisterForm />} />
 
         <Route path="/user-dashboard" element={
             <AuthenticatedDashboard/>
