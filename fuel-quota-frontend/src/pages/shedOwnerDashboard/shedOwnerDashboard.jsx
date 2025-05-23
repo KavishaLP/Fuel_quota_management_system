@@ -1,14 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import withAuth2 from "../withAuth2";
 import "./shedOwnerDashboard.css";
 
 const ShedOwnerDashboard = ({ userId, authToken }) => {
+  const [activeSection, setActiveSection] = useState("addEmployee");
   const [employeeName, setEmployeeName] = useState("");
   const [employeeEmail, setEmployeeEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [employeeList, setEmployeeList] = useState([]);
+  const [userDetails, setUserDetails] = useState(null);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
 
+  // Register Employee
   const handleRegisterEmployee = async (e) => {
     e.preventDefault();
 
@@ -18,19 +25,22 @@ const ShedOwnerDashboard = ({ userId, authToken }) => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/shedownerapi/register-employee", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          station_registration_number: userId,
-          name: employeeName,
-          email: employeeEmail,
-          password: password,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/shedownerapi/register-employee",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            station_registration_number: userId,
+            name: employeeName,
+            email: employeeEmail,
+            password: password,
+          }),
+        }
+      );
 
       if (response.ok) {
         setMessage("Employee registered successfully!");
@@ -38,6 +48,7 @@ const ShedOwnerDashboard = ({ userId, authToken }) => {
         setEmployeeEmail("");
         setPassword("");
         setConfirmPassword("");
+        fetchEmployeeList(); // Refresh the employee list
       } else {
         const errorData = await response.json();
         setMessage(errorData.message || "Failed to register employee.");
@@ -47,54 +58,326 @@ const ShedOwnerDashboard = ({ userId, authToken }) => {
     }
   };
 
+  // Fetch Employee List
+  const fetchEmployeeList = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/shedownerapi/employees",
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setEmployeeList(data);
+        setMessage(""); // Clear any previous error messages
+      } else {
+        const errorData = await response.json();
+        setMessage(errorData.message || "Failed to fetch employee list.");
+      }
+    } catch (error) {
+      setMessage("An error occurred while fetching the employee list.");
+    }
+  };
+
+  // Fetch User Details
+  const fetchUserDetails = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/shedownerapi/user-details",
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setUserDetails(data);
+      } else {
+        setMessage("Failed to fetch user details.");
+      }
+    } catch (error) {
+      setMessage("An error occurred while fetching user details.");
+    }
+  };
+
+  // Update Employee
+  const handleUpdateEmployee = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(
+        `http://localhost:5000/shedownerapi/employees/${selectedEmployee.ID}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify(selectedEmployee),
+        }
+      );
+      if (response.ok) {
+        setMessage("Employee updated successfully!");
+        setIsUpdateModalOpen(false);
+        fetchEmployeeList();
+      } else {
+        const errorData = await response.json();
+        setMessage(errorData.message || "Failed to update employee.");
+      }
+    } catch (error) {
+      setMessage("An error occurred while updating the employee.");
+    }
+  };
+
+  // Delete Employee
+  const handleDeleteEmployee = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/shedownerapi/employees/${selectedEmployee.ID}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+      if (response.ok) {
+        setMessage("Employee deleted successfully!");
+        setIsDeleteModalOpen(false);
+        fetchEmployeeList();
+      } else {
+        const errorData = await response.json();
+        setMessage(errorData.message || "Failed to delete employee.");
+      }
+    } catch (error) {
+      setMessage("An error occurred while deleting the employee.");
+    }
+  };
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchUserDetails();
+    fetchEmployeeList();
+  }, []);
+
   return (
-    <div className="shed-owner-dashboard">
-      <h1>Shed Owner Dashboard</h1>
-      <form onSubmit={handleRegisterEmployee} className="employee-form">
-        <h2>Register Employee</h2>
-        <div>
-          <label htmlFor="employeeName">Employee Name:</label>
-          <input
-            type="text"
-            id="employeeName"
-            value={employeeName}
-            onChange={(e) => setEmployeeName(e.target.value)}
-            required
-          />
+    <div className="dashboard-container">
+      {/* Navbar */}
+      <div className="navbar">
+        <div className="navbar-brand">FuelQuota - Shed Owner Dashboard</div>
+        <div className="navbar-user">
+          Welcome, {userDetails ? userDetails.name : "Loading..."}
         </div>
-        <div>
-          <label htmlFor="employeeEmail">Employee Email:</label>
-          <input
-            type="email"
-            id="employeeEmail"
-            value={employeeEmail}
-            onChange={(e) => setEmployeeEmail(e.target.value)}
-            required
-          />
+      </div>
+
+      {/* Sidebar and Main Content */}
+      <div className="dashboard-content">
+        {/* Sidebar */}
+        <div className="sidebar">
+          <div
+            className={`sidebar-item ${
+              activeSection === "addEmployee" ? "active" : ""
+            }`}
+            onClick={() => setActiveSection("addEmployee")}
+          >
+            Add Employee
+          </div>
+          <div
+            className={`sidebar-item ${
+              activeSection === "employeeList" ? "active" : ""
+            }`}
+            onClick={() => {
+              setActiveSection("employeeList");
+              fetchEmployeeList();
+            }}
+          >
+            Employee List
+          </div>
         </div>
-        <div>
-          <label htmlFor="password">Password:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+
+        {/* Main Content */}
+        <div className="main-content">
+          {activeSection === "addEmployee" && (
+            <div className="employee-form-container">
+              <h2>Register Employee</h2>
+              <form onSubmit={handleRegisterEmployee}>
+                <div className="form-group">
+                  <label htmlFor="employeeName">Employee Name:</label>
+                  <input
+                    type="text"
+                    id="employeeName"
+                    value={employeeName}
+                    onChange={(e) => setEmployeeName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="employeeEmail">Employee Email:</label>
+                  <input
+                    type="email"
+                    id="employeeEmail"
+                    value={employeeEmail}
+                    onChange={(e) => setEmployeeEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="password">Password:</label>
+                  <input
+                    type="password"
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="confirmPassword">Confirm Password:</label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <button type="submit" className="submit-btn">
+                  Register Employee
+                </button>
+              </form>
+              {message && (
+                <p
+                  className={`alert ${
+                    message.includes("successfully") ? "success" : "error"
+                  }`}
+                >
+                  {message}
+                </p>
+              )}
+            </div>
+          )}
+
+          {activeSection === "employeeList" && (
+            <div className="employee-list-container">
+              <h2>Employee List</h2>
+              {employeeList.length > 0 ? (
+                <table className="employee-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employeeList.map((employee) => (
+                      <tr key={employee.ID}>
+                        <td>{employee.ID}</td>
+                        <td>{employee.name}</td>
+                        <td>{employee.email}</td>
+                        <td className="actions-cell">
+                          <button
+                            className="edit-btn"
+                            onClick={() => {
+                              setSelectedEmployee(employee);
+                              setIsUpdateModalOpen(true);
+                            }}
+                          >
+                            Update
+                          </button>
+                          <button
+                            className="delete-btn"
+                            onClick={() => {
+                              setSelectedEmployee(employee);
+                              setIsDeleteModalOpen(true);
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="empty-state">No employees found.</p>
+              )}
+            </div>
+          )}
         </div>
-        <div>
-          <label htmlFor="confirmPassword">Confirm Password:</label>
-          <input
-            type="password"
-            id="confirmPassword"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
+      </div>
+
+      {/* Update Modal */}
+      {isUpdateModalOpen && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Update Employee</h2>
+            <form onSubmit={handleUpdateEmployee}>
+              <div className="form-group">
+                <label>Name:</label>
+                <input
+                  type="text"
+                  value={selectedEmployee.name}
+                  onChange={(e) =>
+                    setSelectedEmployee({
+                      ...selectedEmployee,
+                      name: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="form-group">
+                <label>Email:</label>
+                <input
+                  type="email"
+                  value={selectedEmployee.email}
+                  onChange={(e) =>
+                    setSelectedEmployee({
+                      ...selectedEmployee,
+                      email: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <button type="submit" className="submit-btn">
+                Update
+              </button>
+              <button
+                className="cancel-btn"
+                onClick={() => setIsUpdateModalOpen(false)}
+              >
+                Cancel
+              </button>
+            </form>
+          </div>
         </div>
-        <button type="submit">Register Employee</button>
-      </form>
-      {message && <p className="message">{message}</p>}
+      )}
+
+      {/* Delete Modal */}
+      {isDeleteModalOpen && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Delete Employee</h2>
+            <p>
+              Are you sure you want to delete{" "}
+              <strong>{selectedEmployee.name}</strong>?
+            </p>
+            <button className="delete-btn" onClick={handleDeleteEmployee}>
+              Delete
+            </button>
+            <button
+              className="cancel-btn"
+              onClick={() => setIsDeleteModalOpen(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
