@@ -15,6 +15,7 @@ import { resetWeeklyQuotas } from "./utils/resetQuotas.js";
 import {manualReset} from "./utils/resetQuotas.js"; // Import the manual reset function
 
 
+
 const app = express();
 
 // Initialize during server startup
@@ -42,6 +43,8 @@ app.use("/userapi", userMainRoutes);
 
 app.use("/shedapi", shedOwnerRoutes);
 app.use("/shedownerapi", shedOwnerMainRoutes);
+
+
 
 app.get("/reset-test", manualReset);  // Manual reset endpoint for testing
 
