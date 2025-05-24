@@ -1,1 +1,12 @@
-
+CREATE TABLE employees (
+    ID INT(11) NOT NULL AUTO_INCREMENT,
+    station_registration_number INT(11) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    mobile_number VARCHAR(20), 
+    password_hash VARCHAR(255) NOT NULL,
+    PRIMARY KEY (ID),
+    FOREIGN KEY (station_registration_number) REFERENCES fuel_stations(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
