@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Background Colors -->
+    <color name="background_primary">#F0F4F8</color>
+
+    <!-- Header Colors -->
+    <color name="header_gradient">#667EEA</color>
+    <color name="white">#FFFFFF</color>
+    <color name="white_70">#B3FFFFFF</color>
+
+    <!-- Vehicle Number Card -->
+    <color name="card_vehicle_number">#FFFFFF</color>
+    <color name="vehicle_number_label">#7C3AED</color>
+    <color name="vehicle_number_text">#1A202C</color>
+    <color name="vehicle_number_bg">#F7FAFC</color>
+
+    <!-- Vehicle Type Card -->
+    <color name="card_vehicle_type">#FFFFFF</color>
+    <color name="vehicle_type_label">#059669</color>
+    <color name="vehicle_type_text">#1A202C</color>
+    <color name="vehicle_type_category">#FFFFFF</color>
+    <color name="category_badge">#10B981</color>
+
+    <!-- Fuel Quota Card -->
+    <color name="card_fuel_quota">#FFFFFF</color>
+    <color name="fuel_quota_label">#DC2626</color>
+    <color name="quota_display_bg">#FEF7F0</color>
+    <color name="quota_amount">#EA580C</color>
+    <color name="quota_subtitle">#9CA3AF</color>
+    <color name="status_label">#6B7280</color>
+    <color name="status_active">#FFFFFF</color>
+    <color name="status_bg">#10B981</color>
+
+    <!-- Progress Indicator -->
+    <color name="usage_label">#6B7280</color>
+    <color name="progress_bg">#E5E7EB</color>
+    <color name="progress_fill">#F59E0B</color>
+    <color name="progress_text">#374151</color>
+
+    <!-- Info Banner -->
+    <color name="info_banner_bg">#EBF8FF</color>
+    <color name="info_primary">#1E40AF</color>
+    <color name="info_secondary">#64748B</color>
+
+    <!-- Fuel Entry Card -->
+    <color name="fuel_entry_card_bg">#FFFFFF</color>
+    <color name="fuel_entry_label">#DC2626</color>
+    <color name="date_label">#FFFFFF</color>
+    <color name="date_badge_bg">#8B5CF6</color>
+
+    <!-- Input Section -->
+    <color name="input_section_bg">#F9FAFB</color>
+    <color name="input_hint">#6B7280</color>
+    <color name="input_bg">#FFFFFF</color>
+    <color name="input_hint_text">#9CA3AF</color>
+    <color name="input_text">#1F2937</color>
+    <color name="unit_label">#374151</color>
+    <color name="unit_bg">#E5E7EB</color>
+
+    <!-- Validation -->
+    <color name="validation_warning">#DC2626</color>
+
+    <!-- Submit Button -->
+    <color name="submit_button_bg">#059669</color>
+    <color name="submit_button_text">#FFFFFF</color>
+
+    <!-- Quick Buttons -->
+    <color name="quick_label">#6B7280</color>
+    <color name="quick_button_bg">#F3F4F6</color>
+    <color name="quick_button_text">#374151</color>
+</resources>
