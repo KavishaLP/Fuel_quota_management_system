@@ -1,3 +1,8 @@
+------------------------------------------------------------------------------------------------
+vehicleregisterdb DATABASE
+------------------------------------------------------------------------------------------------
+
+
 CREATE TABLE employees (
     ID INT(11) NOT NULL AUTO_INCREMENT,
     station_registration_number INT(11) NOT NULL,
