@@ -80,6 +80,18 @@ CREATE TABLE fuel_quotas (
 motortrafficdepdb DATABASE
 ------------------------------------------------------------------------------------------------
 
+CREATE TABLE fuel_sheds (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    owner_name VARCHAR(100) NOT NULL,
+    nic VARCHAR(12) NOT NULL UNIQUE,
+    fuel_station_name VARCHAR(100) NOT NULL,
+    station_registration_number VARCHAR(50) NOT NULL UNIQUE,
+    contact_number VARCHAR(15),
+    email VARCHAR(100),
+    location VARCHAR(200) NOT NULL,
+    registered_date DATE NOT NULL,
+    PRIMARY KEY (id)
+);
 
 
 
