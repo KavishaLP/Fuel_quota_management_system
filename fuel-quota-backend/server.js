@@ -10,6 +10,8 @@ import userRoutes from "./routes/userRoutes.js";
 import userMainRoutes from "./routes/userMainRoutes.js";
 import shedOwnerRoutes from "./routes/shedOwnerRoutes.js";
 import shedOwnerMainRoutes from "./routes/shedOwnerMainRoutes.js";
+import employeeRoutes from "./routes/employeeRoutes.js";
+import vehicleRoutes from "./routes/vehicleRoutes.js";
 import {validateToken} from "./middleware/authMiddleware.js";
 import { resetWeeklyQuotas } from "./utils/resetQuotas.js";
 import {manualReset} from "./utils/resetQuotas.js"; // Import the manual reset function
@@ -44,7 +46,8 @@ app.use("/userapi", userMainRoutes);
 app.use("/shedapi", shedOwnerRoutes);
 app.use("/shedownerapi", shedOwnerMainRoutes);
 
-
+app.use("/api/employee", employeeRoutes);
+app.use('/api/vehicles', vehicleRoutes);
 
 app.get("/reset-test", manualReset);  // Manual reset endpoint for testing
 
