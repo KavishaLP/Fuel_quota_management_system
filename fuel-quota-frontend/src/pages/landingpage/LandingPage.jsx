@@ -1,19 +1,22 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faGasPump, 
-  faQrcode, 
-  faCar, 
-  faUserPlus, 
-  faSignInAlt,
+
+import React, { useState } from 'react';
+import {
+  faCar,
   faChartLine,
+  faGasPump,
+  faQrcode,
   faQuestionCircle,
   faShieldAlt,
+  faSignInAlt,
   faStore,
-  faTimes
+  faTimes,
+  faUserPlus
 } from '@fortawesome/free-solid-svg-icons';
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import assets from '../../assets/assets';
+import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -98,7 +101,7 @@ const LandingPage = () => {
           </div>
         </div>
         <div className="hero-image">
-          <img src="/images/fuel-quota.svg" alt="Fuel Quota System Illustration" />
+          <img src={assets.head} alt="Fuel Quota System Illustration" />
         </div>
       </section>
 
