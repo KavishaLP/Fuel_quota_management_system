@@ -1,3 +1,6 @@
+/* eslint-disable no-unused-vars */
+
+
 import React, { useState, useEffect } from "react";
 import withAuth2 from "../withAuth2";
 import "./shedOwnerDashboard.css";
@@ -6,6 +9,8 @@ const ShedOwnerDashboard = ({ userId, authToken }) => {
   const [activeSection, setActiveSection] = useState("addEmployee");
   const [employeeName, setEmployeeName] = useState("");
   const [employeeEmail, setEmployeeEmail] = useState("");
+  const [employeePhone, setEmployeePhone] = useState(""); // New state for phone number
+  const [phoneError, setPhoneError] = useState(""); // For phone validation errors
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -15,12 +20,44 @@ const ShedOwnerDashboard = ({ userId, authToken }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
+
+const validatePhoneNumber = (phone) => {
+  // Sri Lankan phone numbers in international format: +94 followed by 9 digits
+  // The first digit after +94 should be 7 for mobile numbers
+  const phoneRegex = /^\+94\d{9}$/;
+  
+  if (!phoneRegex.test(phone)) {
+    setPhoneError("Phone number must be in format: +94XXXXXXXXX");
+    return false;
+  }
+  
+  setPhoneError("");
+  return true;
+};  
+
+// Add this function near your other utility functions
+const formatPhoneNumber = (phone) => {
+  // If number starts with 0, replace it with +94
+  if (phone.startsWith('0')) {
+    return '+94' + phone.substring(1);
+  }
+  // If it doesn't start with +94, add it
+  else if (!phone.startsWith('+94')) {
+    return '+94' + phone;
+  }
+  return phone;
+};
+
   // Register Employee
   const handleRegisterEmployee = async (e) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
       setMessage("Passwords do not match!");
+      return;
+    }
+    
+    if (!validatePhoneNumber(employeePhone)) {
       return;
     }
 
@@ -37,6 +74,7 @@ const ShedOwnerDashboard = ({ userId, authToken }) => {
             station_registration_number: userId,
             name: employeeName,
             email: employeeEmail,
+            phone: employeePhone, // Add phone to request
             password: password,
           }),
         }
@@ -46,6 +84,7 @@ const ShedOwnerDashboard = ({ userId, authToken }) => {
         setMessage("Employee registered successfully!");
         setEmployeeName("");
         setEmployeeEmail("");
+        setEmployeePhone(""); // Reset phone
         setPassword("");
         setConfirmPassword("");
         fetchEmployeeList(); // Refresh the employee list
@@ -83,30 +122,36 @@ const ShedOwnerDashboard = ({ userId, authToken }) => {
   };
 
   // Fetch User Details
-  const fetchUserDetails = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:5000/shedownerapi/user-details",
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setUserDetails(data);
-      } else {
-        setMessage("Failed to fetch user details.");
-      }
-    } catch (error) {
-      setMessage("An error occurred while fetching user details.");
-    }
-  };
+  // const fetchUserDetails = async () => {
+  //   try {
+  //     const response = await fetch(
+  //       "http://localhost:5000/shedownerapi/user-details",
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${authToken}`,
+  //         },
+  //       }
+  //     );
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setUserDetails(data);
+  //     } else {
+  //       setMessage("Failed to fetch user details.");
+  //     }
+  //   } catch (error) {
+  //     setMessage("An error occurred while fetching user details.");
+  //   }
+  // };
 
   // Update Employee
   const handleUpdateEmployee = async (e) => {
     e.preventDefault();
+    
+    // Validate phone number
+    if (!validatePhoneNumber(selectedEmployee.phone)) {
+      return;
+    }
+    
     try {
       const response = await fetch(
         `http://localhost:5000/shedownerapi/employees/${selectedEmployee.ID}`,
@@ -159,7 +204,7 @@ const ShedOwnerDashboard = ({ userId, authToken }) => {
 
   // Fetch data on component mount
   useEffect(() => {
-    fetchUserDetails();
+    // fetchUserDetails();
     fetchEmployeeList();
   }, []);
 
@@ -225,6 +270,21 @@ const ShedOwnerDashboard = ({ userId, authToken }) => {
                   />
                 </div>
                 <div className="form-group">
+                  <label htmlFor="employeePhone">Employee Phone:</label>
+                  <input
+                    type="text"
+                    id="employeePhone"
+                    placeholder="+94XXXXXXXXX"
+                    value={employeePhone}
+                    onChange={(e) => {
+                      const formattedNumber = formatPhoneNumber(e.target.value);
+                      setEmployeePhone(formattedNumber);
+                    }}
+                    required
+                  />
+                  {phoneError && <p className="error-message">{phoneError}</p>}
+                </div>
+                <div className="form-group">
                   <label htmlFor="password">Password:</label>
                   <input
                     type="password"
@@ -270,6 +330,7 @@ const ShedOwnerDashboard = ({ userId, authToken }) => {
                       <th>ID</th>
                       <th>Name</th>
                       <th>Email</th>
+                      <th>Phone</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -279,6 +340,7 @@ const ShedOwnerDashboard = ({ userId, authToken }) => {
                         <td>{employee.ID}</td>
                         <td>{employee.name}</td>
                         <td>{employee.email}</td>
+                        <td>{employee.phone}</td>
                         <td className="actions-cell">
                           <button
                             className="edit-btn"
@@ -342,6 +404,22 @@ const ShedOwnerDashboard = ({ userId, authToken }) => {
                     })
                   }
                 />
+              </div>
+              <div className="form-group">
+                <label>Phone:</label>
+                <input
+                  type="text"
+                  value={selectedEmployee.phone || ""}
+                  placeholder="+94XXXXXXXXX"
+                  onChange={(e) => {
+                    const formattedNumber = formatPhoneNumber(e.target.value);
+                    setSelectedEmployee({
+                      ...selectedEmployee,
+                      phone: formattedNumber,
+                    });
+                  }}
+                />
+                {phoneError && <p className="error-message">{phoneError}</p>}
               </div>
               <button type="submit" className="submit-btn">
                 Update
