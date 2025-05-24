@@ -32,3 +32,11 @@ CREATE TABLE fuel_stations (
     weekly_quota DECIMAL(10,2) NOT NULL,
     PRIMARY KEY (id)
 );
+
+CREATE TABLE vehicle_types (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    type_name VARCHAR(50) NOT NULL UNIQUE,
+    weekly_quota DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (id)
+);
+
