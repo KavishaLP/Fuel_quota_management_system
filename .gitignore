@@ -13,6 +13,7 @@ dist-ssr
 *.local
 
 # Editor directories and files
+fuel-quota-backend/.env
 .vscode/*
 !.vscode/extensions.json
 .idea
