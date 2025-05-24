@@ -93,5 +93,21 @@ CREATE TABLE fuel_sheds (
     PRIMARY KEY (id)
 );
 
+CREATE TABLE registered_vehicles (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    vehicleNumber VARCHAR(20) NOT NULL UNIQUE,
+    engineNumber VARCHAR(50) NOT NULL UNIQUE,
+    make VARCHAR(50) NOT NULL,
+    model VARCHAR(50) NOT NULL,
+    year INT(11) NOT NULL,
+    ownerName VARCHAR(100) NOT NULL,
+    ownerNIC VARCHAR(20) NOT NULL,
+    registrationDate DATE NOT NULL,
+    lastRenewalDate DATE,
+    isActive TINYINT(1) DEFAULT 1,
+    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);
 
 
