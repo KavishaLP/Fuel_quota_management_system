@@ -13,6 +13,7 @@ dist-ssr
 *.local
 
 # Editor directories and files
+fuel-quota-backend/.env
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -25,7 +26,6 @@ dist-ssr
 
 # React specific
 build/
-.env.local
 .env.development.local
 .env.test.local
 .env.production.local
@@ -36,3 +36,4 @@ fuel_quote_frontend/node_modules/
 fuel_quote_backend/node_modules/
 fuel_quote_frontend/dist/
 fuel_quote_frontend/dist-ssr/
+config.bat
