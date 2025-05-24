@@ -1,5 +1,9 @@
 import bcrypt from "bcrypt";
 import { vehicleDB } from "../config/sqldb.js";
+import dotenv from "dotenv";
+
+dotenv.config();
+
 
 // Register Employee
 export const registerEmployee = (req, res) => {
