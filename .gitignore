@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Logs
 logs
 *.log
@@ -37,3 +38,20 @@ fuel_quote_frontend/node_modules/
 fuel_quote_backend/node_modules/
 fuel_quote_frontend/dist/
 fuel_quote_frontend/dist-ssr/
+=======
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+>>>>>>> 7f6d0d8 (Initial commit from FuelQuotaApp)
