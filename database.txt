@@ -54,4 +54,20 @@ CREATE TABLE vehicleowner (
         ON UPDATE CASCADE
 );
 
+CREATE TABLE fuel_quotas (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    vehicle_owner_id INT(11) NOT NULL,
+    vehicle_type_id INT(11) NOT NULL,
+    remaining_quota DECIMAL(5,2) NOT NULL,
+    week_start_date DATE NOT NULL,
+    week_end_date DATE NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (vehicle_owner_id) REFERENCES vehicleowner(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (vehicle_type_id) REFERENCES vehicle_types(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
 
