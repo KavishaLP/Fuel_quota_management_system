@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_primary"
+    tools:context=".VehicleDetailsActivity">
+
+    <!-- Header Card -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/headerCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="@color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vehicle Details"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/vehicle_number_text"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vehicle Number:"
+                android:textSize="14sp"
+                android:textColor="@color/usage_label"
+                android:layout_marginBottom="4dp"/>
+
+            <TextView
+                android:id="@+id/tvVehicleNumber"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Loading..."
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/vehicle_number_text"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vehicle Type:"
+                android:textSize="14sp"
+                android:textColor="@color/usage_label"
+                android:layout_marginBottom="4dp"/>
+
+            <TextView
+                android:id="@+id/tvVehicleType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Loading..."
+                android:textSize="16sp"
+                android:textColor="@color/vehicle_number_text"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Remaining Quota:"
+                android:textSize="14sp"
+                android:textColor="@color/usage_label"
+                android:layout_marginBottom="4dp"/>
+
+            <TextView
+                android:id="@+id/tvQuota"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0.00 L"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/header_gradient"/>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Fuel Entry Card -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/fuelEntryCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="@color/white"
+        app:layout_constraintTop_toBottomOf="@id/headerCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⛽ Fuel Entry"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/vehicle_number_text"
+                android:layout_marginBottom="20dp"/>
+
+            <!-- Quick Amount Buttons -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Quick Select:"
+                android:textSize="14sp"
+                android:textColor="@color/usage_label"
+                android:layout_marginBottom="8dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="20dp">
+
+                <Button
+                    android:id="@+id/btnQuick5"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="5L"
+                    android:textSize="12sp"
+                    android:backgroundTint="@color/input_bg"
+                    android:textColor="@color/usage_label"
+                    app:cornerRadius="8dp"/>
+
+                <Button
+                    android:id="@+id/btnQuick10"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginHorizontal="4dp"
+                    android:text="10L"
+                    android:textSize="12sp"
+                    android:backgroundTint="@color/input_bg"
+                    android:textColor="@color/usage_label"
+                    app:cornerRadius="8dp"/>
+
+                <Button
+                    android:id="@+id/btnQuick20"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="20L"
+                    android:textSize="12sp"
+                    android:backgroundTint="@color/input_bg"
+                    android:textColor="@color/usage_label"
+                    app:cornerRadius="8dp"/>
+
+            </LinearLayout>
+
+            <!-- Fuel Amount Input -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:hint="Enter fuel amount (Liters)"
+                app:hintTextColor="@color/input_hint"
+                app:boxBackgroundColor="@color/input_bg"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxStrokeColor="@color/header_gradient"
+                app:boxStrokeWidth="2dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etFuelAmount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:textColor="@color/input_text"
+                    android:textSize="16sp"
+                    android:paddingVertical="16dp"
+                    android:imeOptions="actionDone"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Validation Message -->
+            <TextView
+                android:id="@+id/tvValidationMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚠️ Amount exceeds remaining quota!"
+                android:textSize="14sp"
+                android:textColor="#F44336"
+                android:visibility="gone"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Submit Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSubmitFuel"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="🚀 SUBMIT FUEL ENTRY"
+                android:textAllCaps="false"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/submit_button_text"
+                android:backgroundTint="@color/submit_button_bg"
+                app:cornerRadius="16dp"
+                app:elevation="4dp"/>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
